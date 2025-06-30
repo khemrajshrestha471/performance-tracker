@@ -66,62 +66,64 @@ const topPerformers = [
 
 export default function Dashboard() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back! Here's what's happening with your team.</p>
+    <div className="space-y-4 sm:space-y-6 w-full overflow-hidden">
+      <div className="space-y-1">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground text-sm sm:text-base">
+          Welcome back! Here's what's happening with your team.
+        </p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Employees</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardStats.totalEmployees}</div>
+            <div className="text-xl sm:text-2xl font-bold">{dashboardStats.totalEmployees}</div>
             <p className="text-xs text-muted-foreground">+12% from last month</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Reviews</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Active Reviews</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardStats.activeReviews}</div>
+            <div className="text-xl sm:text-2xl font-bold">{dashboardStats.activeReviews}</div>
             <p className="text-xs text-muted-foreground">+3 new this week</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed Goals</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Completed Goals</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardStats.completedGoals}</div>
+            <div className="text-xl sm:text-2xl font-bold">{dashboardStats.completedGoals}</div>
             <p className="text-xs text-muted-foreground">+18% completion rate</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Performance</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Avg Performance</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardStats.avgPerformance}</div>
+            <div className="text-xl sm:text-2xl font-bold">{dashboardStats.avgPerformance}</div>
             <p className="text-xs text-muted-foreground">+0.3 from last quarter</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-3">
         {/* Performance Trend */}
-        <Card className="col-span-2">
+        <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Performance Trend</CardTitle>
-            <CardDescription>Average team performance over the last 6 months</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Performance Trend</CardTitle>
+            <CardDescription className="text-sm">Average team performance over the last 6 months</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer
@@ -131,7 +133,7 @@ export default function Dashboard() {
                   color: "#2A6EF4",
                 },
               }}
-              className="h-[300px]"
+              className="h-[250px] sm:h-[300px] w-full"
             >
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={performanceData}>
@@ -149,8 +151,8 @@ export default function Dashboard() {
         {/* Department Distribution */}
         <Card>
           <CardHeader>
-            <CardTitle>Department Distribution</CardTitle>
-            <CardDescription>Employee count by department</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Department Distribution</CardTitle>
+            <CardDescription className="text-sm">Employee count by department</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer
@@ -159,7 +161,7 @@ export default function Dashboard() {
                   label: "Employees",
                 },
               }}
-              className="h-[300px]"
+              className="h-[250px] sm:h-[300px] w-full"
             >
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -167,8 +169,8 @@ export default function Dashboard() {
                     data={departmentData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
+                    innerRadius={40}
+                    outerRadius={80}
                     paddingAngle={5}
                     dataKey="value"
                   >
@@ -185,7 +187,7 @@ export default function Dashboard() {
                 <div key={dept.name} className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full" style={{ backgroundColor: dept.color }} />
-                    <span>{dept.name}</span>
+                    <span className="truncate">{dept.name}</span>
                   </div>
                   <span className="font-medium">{dept.value}</span>
                 </div>
@@ -197,16 +199,16 @@ export default function Dashboard() {
         {/* Top Performers */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Performers</CardTitle>
-            <CardDescription>Highest rated employees this month</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Top Performers</CardTitle>
+            <CardDescription className="text-sm">Highest rated employees this month</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {topPerformers.map((performer, index) => (
               <div key={performer.name} className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium shrink-0">
                   {index + 1}
                 </div>
-                <Avatar className="h-10 w-10">
+                <Avatar className="h-10 w-10 shrink-0">
                   <AvatarImage src={performer.avatar || "/placeholder.svg"} alt={performer.name} />
                   <AvatarFallback>
                     {performer.name
@@ -215,26 +217,28 @@ export default function Dashboard() {
                       .join("")}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{performer.name}</p>
-                  <p className="text-xs text-muted-foreground">{performer.department}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{performer.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{performer.department}</p>
                 </div>
-                <Badge variant="secondary">{performer.score}</Badge>
+                <Badge variant="secondary" className="shrink-0">
+                  {performer.score}
+                </Badge>
               </div>
             ))}
           </CardContent>
         </Card>
 
         {/* Recent Activities */}
-        <Card className="col-span-2">
+        <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Recent Activities</CardTitle>
-            <CardDescription>Latest updates from your team</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Recent Activities</CardTitle>
+            <CardDescription className="text-sm">Latest updates from your team</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {recentActivities.map((activity) => (
               <div key={activity.id} className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
+                <Avatar className="h-10 w-10 shrink-0">
                   <AvatarImage src={activity.avatar || "/placeholder.svg"} alt={activity.employee} />
                   <AvatarFallback>
                     {activity.employee
@@ -243,13 +247,13 @@ export default function Dashboard() {
                       .join("")}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{activity.employee}</p>
-                  <p className="text-sm text-muted-foreground">{activity.action}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{activity.employee}</p>
+                  <p className="text-sm text-muted-foreground truncate">{activity.action}</p>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
                   <Clock className="h-3 w-3" />
-                  {activity.time}
+                  <span className="hidden sm:inline">{activity.time}</span>
                 </div>
               </div>
             ))}

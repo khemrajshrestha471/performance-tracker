@@ -75,15 +75,17 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Reports & Analytics</h1>
-          <p className="text-muted-foreground">Comprehensive insights into team performance and productivity</p>
+    <div className="space-y-4 sm:space-y-6 w-full overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Reports & Analytics</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            Comprehensive insights into team performance and productivity
+          </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Select defaultValue="q2-2024">
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-full sm:w-[140px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -92,63 +94,64 @@ export default function ReportsPage() {
               <SelectItem value="q3-2024">Q3 2024</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={() => handleDownloadReport("comprehensive")}>
+          <Button onClick={() => handleDownloadReport("comprehensive")} className="shrink-0">
             <Download className="mr-2 h-4 w-4" />
-            Download Report
+            <span className="hidden sm:inline">Download Report</span>
+            <span className="sm:hidden">Download</span>
           </Button>
         </div>
       </div>
 
       {/* Key Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Employees</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{reportStats.totalEmployees}</div>
+            <div className="text-xl sm:text-2xl font-bold">{reportStats.totalEmployees}</div>
             <p className="text-xs text-muted-foreground">+8% from last quarter</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Performance</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Avg Performance</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{reportStats.avgPerformance}</div>
+            <div className="text-xl sm:text-2xl font-bold">{reportStats.avgPerformance}</div>
             <p className="text-xs text-muted-foreground">+0.2 from last quarter</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Goal Completion</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Goal Completion</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{reportStats.goalCompletion}%</div>
+            <div className="text-xl sm:text-2xl font-bold">{reportStats.goalCompletion}%</div>
             <p className="text-xs text-muted-foreground">+12% from last quarter</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Attendance</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Avg Attendance</CardTitle>
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{reportStats.avgAttendance}%</div>
+            <div className="text-xl sm:text-2xl font-bold">{reportStats.avgAttendance}%</div>
             <p className="text-xs text-muted-foreground">+1% from last quarter</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-3">
         {/* Performance by Department */}
-        <Card className="col-span-2">
+        <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Performance by Department</CardTitle>
-            <CardDescription>Average performance scores across departments</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Performance by Department</CardTitle>
+            <CardDescription className="text-sm">Average performance scores across departments</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer
@@ -158,7 +161,7 @@ export default function ReportsPage() {
                   color: "#2A6EF4",
                 },
               }}
-              className="h-[300px]"
+              className="h-[250px] sm:h-[300px] w-full"
             >
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={performanceByDepartment}>
@@ -176,8 +179,8 @@ export default function ReportsPage() {
         {/* Goal Completion Rate */}
         <Card>
           <CardHeader>
-            <CardTitle>Goal Completion Rate</CardTitle>
-            <CardDescription>Overall goal completion status</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Goal Completion Rate</CardTitle>
+            <CardDescription className="text-sm">Overall goal completion status</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer
@@ -186,7 +189,7 @@ export default function ReportsPage() {
                   label: "Goals",
                 },
               }}
-              className="h-[300px]"
+              className="h-[250px] sm:h-[300px] w-full"
             >
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -194,8 +197,8 @@ export default function ReportsPage() {
                     data={goalCompletionData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
+                    innerRadius={40}
+                    outerRadius={80}
                     paddingAngle={5}
                     dataKey="value"
                   >
@@ -210,11 +213,11 @@ export default function ReportsPage() {
             <div className="mt-4 space-y-2">
               {goalCompletionData.map((item) => (
                 <div key={item.name} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span>{item.name}</span>
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                    <span className="truncate">{item.name}</span>
                   </div>
-                  <span className="font-medium">{item.value}%</span>
+                  <span className="font-medium shrink-0">{item.value}%</span>
                 </div>
               ))}
             </div>
@@ -222,10 +225,10 @@ export default function ReportsPage() {
         </Card>
 
         {/* Performance Trend */}
-        <Card className="col-span-2">
+        <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Performance Trend</CardTitle>
-            <CardDescription>Monthly performance trend over time</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Performance Trend</CardTitle>
+            <CardDescription className="text-sm">Monthly performance trend over time</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer
@@ -235,7 +238,7 @@ export default function ReportsPage() {
                   color: "#10B981",
                 },
               }}
-              className="h-[300px]"
+              className="h-[250px] sm:h-[300px] w-full"
             >
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={performanceTrend}>
@@ -259,22 +262,24 @@ export default function ReportsPage() {
         {/* Top Performers */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Performers</CardTitle>
-            <CardDescription>Highest rated employees this quarter</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Top Performers</CardTitle>
+            <CardDescription className="text-sm">Highest rated employees this quarter</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {topPerformers.map((performer, index) => (
               <div key={performer.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium shrink-0">
                     {index + 1}
                   </div>
-                  <div>
-                    <p className="text-sm font-medium">{performer.name}</p>
-                    <p className="text-xs text-muted-foreground">{performer.department}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{performer.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{performer.department}</p>
                   </div>
                 </div>
-                <Badge variant="secondary">{performer.score}</Badge>
+                <Badge variant="secondary" className="shrink-0">
+                  {performer.score}
+                </Badge>
               </div>
             ))}
           </CardContent>
@@ -284,8 +289,8 @@ export default function ReportsPage() {
       {/* Attendance by Department */}
       <Card>
         <CardHeader>
-          <CardTitle>Attendance by Department</CardTitle>
-          <CardDescription>Department-wise attendance rates</CardDescription>
+          <CardTitle className="text-lg sm:text-xl">Attendance by Department</CardTitle>
+          <CardDescription className="text-sm">Department-wise attendance rates</CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer
@@ -295,13 +300,13 @@ export default function ReportsPage() {
                 color: "#F59E0B",
               },
             }}
-            className="h-[200px]"
+            className="h-[200px] sm:h-[250px] w-full"
           >
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={attendanceData} layout="horizontal">
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" domain={[90, 100]} />
-                <YAxis dataKey="department" type="category" width={100} />
+                <YAxis dataKey="department" type="category" width={80} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="attendance" fill="#F59E0B" radius={[0, 4, 4, 0]} />
               </BarChart>
@@ -313,42 +318,42 @@ export default function ReportsPage() {
       {/* Quick Actions */}
       <Card>
         <CardHeader>
-          <CardTitle>Quick Reports</CardTitle>
-          <CardDescription>Generate and download specific reports</CardDescription>
+          <CardTitle className="text-lg sm:text-xl">Quick Reports</CardTitle>
+          <CardDescription className="text-sm">Generate and download specific reports</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
             <Button
               variant="outline"
-              className="h-20 flex-col gap-2 bg-transparent"
+              className="h-16 sm:h-20 flex-col gap-2 bg-transparent"
               onClick={() => handleDownloadReport("performance")}
             >
-              <FileText className="h-6 w-6" />
-              <span className="text-sm">Performance Report</span>
+              <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
+              <span className="text-xs sm:text-sm">Performance Report</span>
             </Button>
             <Button
               variant="outline"
-              className="h-20 flex-col gap-2 bg-transparent"
+              className="h-16 sm:h-20 flex-col gap-2 bg-transparent"
               onClick={() => handleDownloadReport("goals")}
             >
-              <Target className="h-6 w-6" />
-              <span className="text-sm">Goals Report</span>
+              <Target className="h-5 w-5 sm:h-6 sm:w-6" />
+              <span className="text-xs sm:text-sm">Goals Report</span>
             </Button>
             <Button
               variant="outline"
-              className="h-20 flex-col gap-2 bg-transparent"
+              className="h-16 sm:h-20 flex-col gap-2 bg-transparent"
               onClick={() => handleDownloadReport("attendance")}
             >
-              <Award className="h-6 w-6" />
-              <span className="text-sm">Attendance Report</span>
+              <Award className="h-5 w-5 sm:h-6 sm:w-6" />
+              <span className="text-xs sm:text-sm">Attendance Report</span>
             </Button>
             <Button
               variant="outline"
-              className="h-20 flex-col gap-2 bg-transparent"
+              className="h-16 sm:h-20 flex-col gap-2 bg-transparent"
               onClick={() => handleDownloadReport("department")}
             >
-              <Users className="h-6 w-6" />
-              <span className="text-sm">Department Report</span>
+              <Users className="h-5 w-5 sm:h-6 sm:w-6" />
+              <span className="text-xs sm:text-sm">Department Report</span>
             </Button>
           </div>
         </CardContent>

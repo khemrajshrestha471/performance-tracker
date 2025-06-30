@@ -94,36 +94,46 @@ export default function EmployeeDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Employee Details</h1>
-          <p className="text-muted-foreground">Comprehensive view of employee information and performance</p>
+    <div className="space-y-4 sm:space-y-6 w-full overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Employee Details</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            Comprehensive view of employee information and performance
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" size="sm" className="sm:size-default bg-transparent">
             <Edit className="mr-2 h-4 w-4" />
             Edit
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" size="sm" className="sm:size-default bg-transparent">
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="goals">Goals</TabsTrigger>
-          <TabsTrigger value="attendance">Attendance</TabsTrigger>
+      <Tabs defaultValue="profile" className="space-y-4 sm:space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="profile" className="text-xs sm:text-sm">
+            Profile
+          </TabsTrigger>
+          <TabsTrigger value="performance" className="text-xs sm:text-sm">
+            Performance
+          </TabsTrigger>
+          <TabsTrigger value="goals" className="text-xs sm:text-sm">
+            Goals
+          </TabsTrigger>
+          <TabsTrigger value="attendance" className="text-xs sm:text-sm">
+            Attendance
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="profile" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-3">
-            <Card className="md:col-span-1">
+        <TabsContent value="profile" className="space-y-4 sm:space-y-6">
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-3">
+            <Card className="lg:col-span-1">
               <CardHeader className="text-center">
-                <Avatar className="h-24 w-24 mx-auto">
+                <Avatar className="h-20 w-20 sm:h-24 sm:w-24 mx-auto">
                   <AvatarImage src={employee.avatar || "/placeholder.svg"} alt={employee.name} />
                   <AvatarFallback className="text-lg">
                     {employee.name
@@ -132,36 +142,36 @@ export default function EmployeeDetailPage() {
                       .join("")}
                   </AvatarFallback>
                 </Avatar>
-                <CardTitle>{employee.name}</CardTitle>
-                <CardDescription>{employee.position}</CardDescription>
+                <CardTitle className="text-lg sm:text-xl">{employee.name}</CardTitle>
+                <CardDescription className="text-sm">{employee.position}</CardDescription>
                 {getStatusBadge(employee.status)}
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-2 text-sm">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span>{employee.email}</span>
+                  <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="truncate">{employee.email}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
                   <span>{employee.phone}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span>{employee.location}</span>
+                  <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="truncate">{employee.location}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                  <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
                   <span>Joined {new Date(employee.joinDate).toLocaleDateString()}</span>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="md:col-span-2">
+            <Card className="lg:col-span-2">
               <CardHeader>
-                <CardTitle>Employee Information</CardTitle>
+                <CardTitle className="text-lg sm:text-xl">Employee Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                   <div>
                     <h4 className="text-sm font-medium text-muted-foreground">Department</h4>
                     <p className="text-sm font-medium">{employee.department}</p>
@@ -189,12 +199,12 @@ export default function EmployeeDetailPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="performance" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
+        <TabsContent value="performance" className="space-y-4 sm:space-y-6">
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Performance Trend</CardTitle>
-                <CardDescription>Quarterly performance scores over time</CardDescription>
+                <CardTitle className="text-lg sm:text-xl">Performance Trend</CardTitle>
+                <CardDescription className="text-sm">Quarterly performance scores over time</CardDescription>
               </CardHeader>
               <CardContent>
                 <ChartContainer
@@ -204,7 +214,7 @@ export default function EmployeeDetailPage() {
                       color: "#2A6EF4",
                     },
                   }}
-                  className="h-[300px]"
+                  className="h-[250px] sm:h-[300px] w-full"
                 >
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={performanceHistory}>
@@ -227,15 +237,15 @@ export default function EmployeeDetailPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Skills Assessment</CardTitle>
-                <CardDescription>Current skill levels and competencies</CardDescription>
+                <CardTitle className="text-lg sm:text-xl">Skills Assessment</CardTitle>
+                <CardDescription className="text-sm">Current skill levels and competencies</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {skillsData.map((skill) => (
                   <div key={skill.skill} className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span>{skill.skill}</span>
-                      <span className="font-medium">{skill.score}%</span>
+                      <span className="truncate">{skill.skill}</span>
+                      <span className="font-medium shrink-0">{skill.score}%</span>
                     </div>
                     <Progress value={skill.score} className="h-2" />
                   </div>
@@ -245,17 +255,17 @@ export default function EmployeeDetailPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="goals" className="space-y-6">
+        <TabsContent value="goals" className="space-y-4 sm:space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Goals & Objectives</CardTitle>
-              <CardDescription>Current and completed goals for this employee</CardDescription>
+              <CardTitle className="text-lg sm:text-xl">Goals & Objectives</CardTitle>
+              <CardDescription className="text-sm">Current and completed goals for this employee</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {goals.map((goal) => (
                 <div key={goal.id} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                    <div className="space-y-1 min-w-0 flex-1">
                       <h4 className="font-medium">{goal.title}</h4>
                       <p className="text-sm text-muted-foreground">{goal.description}</p>
                     </div>
@@ -268,7 +278,7 @@ export default function EmployeeDetailPage() {
                     </div>
                     <Progress value={goal.progress} className="h-2" />
                   </div>
-                  <div className="flex justify-between text-sm text-muted-foreground">
+                  <div className="flex flex-col sm:flex-row justify-between gap-2 text-sm text-muted-foreground">
                     <span>Deadline: {new Date(goal.deadline).toLocaleDateString()}</span>
                     <span>{goal.status}</span>
                   </div>
@@ -278,11 +288,11 @@ export default function EmployeeDetailPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="attendance" className="space-y-6">
+        <TabsContent value="attendance" className="space-y-4 sm:space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Attendance Overview</CardTitle>
-              <CardDescription>Monthly attendance tracking</CardDescription>
+              <CardTitle className="text-lg sm:text-xl">Attendance Overview</CardTitle>
+              <CardDescription className="text-sm">Monthly attendance tracking</CardDescription>
             </CardHeader>
             <CardContent>
               <ChartContainer
@@ -296,7 +306,7 @@ export default function EmployeeDetailPage() {
                     color: "#EF4444",
                   },
                 }}
-                className="h-[300px]"
+                className="h-[250px] sm:h-[300px] w-full"
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={attendanceData}>

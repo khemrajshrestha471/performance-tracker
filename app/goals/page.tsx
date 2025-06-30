@@ -142,26 +142,26 @@ export default function GoalsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Goals & Objectives</h1>
-          <p className="text-muted-foreground">Track and manage employee goals and objectives</p>
+    <div className="space-y-4 sm:space-y-6 w-full overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Goals & Objectives</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">Track and manage employee goals and objectives</p>
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="shrink-0">
               <Plus className="mr-2 h-4 w-4" />
               Create Goal
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl mx-4">
             <DialogHeader>
               <DialogTitle>Create New Goal</DialogTitle>
               <DialogDescription>Set a new goal or objective for an employee</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Employee</Label>
                   <Select>
@@ -215,13 +215,13 @@ export default function GoalsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Goal Management</CardTitle>
-          <CardDescription>Monitor progress and manage all employee goals</CardDescription>
+          <CardTitle className="text-lg sm:text-xl">Goal Management</CardTitle>
+          <CardDescription className="text-sm">Monitor progress and manage all employee goals</CardDescription>
         </CardHeader>
         <CardContent>
           {/* Filters */}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="relative flex-1 max-w-sm">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mb-6">
+            <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search goals..."
@@ -230,47 +230,49 @@ export default function GoalsPage() {
                 className="pl-10"
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Completed">Completed</SelectItem>
-                <SelectItem value="In Progress">In Progress</SelectItem>
-                <SelectItem value="Not Started">Not Started</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Priority" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Priority</SelectItem>
-                <SelectItem value="High">High</SelectItem>
-                <SelectItem value="Medium">Medium</SelectItem>
-                <SelectItem value="Low">Low</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2 sm:gap-4">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[140px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="Completed">Completed</SelectItem>
+                  <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Not Started">Not Started</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                <SelectTrigger className="w-full sm:w-[140px]">
+                  <SelectValue placeholder="Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Priority</SelectItem>
+                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="Low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Goals Grid */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
             {filteredGoals.map((goal) => (
               <Card key={goal.id} className={`${isOverdue(goal.deadline, goal.status) ? "border-red-200" : ""}`}>
                 <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
                       {getStatusIcon(goal.status)}
-                      <CardTitle className="text-lg">{goal.title}</CardTitle>
+                      <CardTitle className="text-base sm:text-lg truncate">{goal.title}</CardTitle>
                     </div>
                     {getPriorityBadge(goal.priority)}
                   </div>
-                  <CardDescription className="text-sm">{goal.description}</CardDescription>
+                  <CardDescription className="text-sm line-clamp-2">{goal.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
+                    <Avatar className="h-8 w-8 shrink-0">
                       <AvatarImage src={goal.employee.avatar || "/placeholder.svg"} alt={goal.employee.name} />
                       <AvatarFallback className="text-xs">
                         {goal.employee.name
@@ -279,9 +281,9 @@ export default function GoalsPage() {
                           .join("")}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <p className="text-sm font-medium">{goal.employee.name}</p>
-                      <p className="text-xs text-muted-foreground">{goal.employee.department}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{goal.employee.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{goal.employee.department}</p>
                     </div>
                   </div>
 
@@ -294,10 +296,10 @@ export default function GoalsPage() {
                   </div>
 
                   <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3 text-muted-foreground" />
+                    <div className="flex items-center gap-1 min-w-0 flex-1">
+                      <Calendar className="h-3 w-3 text-muted-foreground shrink-0" />
                       <span
-                        className={isOverdue(goal.deadline, goal.status) ? "text-red-600" : "text-muted-foreground"}
+                        className={`truncate ${isOverdue(goal.deadline, goal.status) ? "text-red-600" : "text-muted-foreground"}`}
                       >
                         {new Date(goal.deadline).toLocaleDateString()}
                       </span>

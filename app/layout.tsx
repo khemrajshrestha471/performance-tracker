@@ -12,7 +12,6 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Employee Performance Tracker",
   description: "Modern SaaS dashboard for employee performance management",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -25,11 +24,13 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <SidebarProvider defaultOpen={true}>
-            <div className="flex min-h-screen w-full">
+            <div className="flex min-h-screen w-full overflow-hidden">
               <AppSidebar />
-              <div className="flex-1 flex flex-col">
+              <div className="flex-1 flex flex-col min-w-0">
                 <TopBar />
-                <main className="flex-1 p-6 bg-gray-50 dark:bg-gray-900">{children}</main>
+                <main className="flex-1 p-3 sm:p-4 lg:p-6 bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
+                  {children}
+                </main>
               </div>
             </div>
           </SidebarProvider>
