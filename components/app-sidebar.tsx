@@ -1,15 +1,15 @@
 "use client"
 
-import { BarChart3, Building2, FileText, Home, Settings, Target, Users } from "lucide-react"
+import { BarChart3, Building2, FileText, Home, LogOut, Settings, Target, Users } from "lucide-react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useAuthStore } from "@/store/authStore"
 
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -51,6 +51,25 @@ const menuItems = [
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+  const { logout } = useAuthStore() // Get logout function from your store
+
+  const handleLogout = async () => {
+    try {
+      // Call your logout API
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      })
+
+      if (response.ok) {
+        logout() // Clear client-side state
+        router.push('/login') // Redirect to login page
+      }
+    } catch (error) {
+      console.error('Logout failed:', error)
+    }
+  }
 
   return (
     <Sidebar className="border-r">
@@ -79,6 +98,19 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        
+        <SidebarGroup className="mt-auto">
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={handleLogout} className="justify-center bg-red-500">
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
