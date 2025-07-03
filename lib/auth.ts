@@ -59,7 +59,7 @@ export const comparePasswords = async (
 export const generateToken = (user: Pick<User, 'id' | 'email'>): string => {
   const payload = {
     id: user.id,
-    email: user.email,
+    // email: user.email,
   };
 
   const options: SignOptions = {
