@@ -1,7 +1,7 @@
-// app/layout.tsx
+// src/app/(public)/layout.tsx
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import './globals.css';
+import '../globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -10,16 +10,14 @@ export const metadata: Metadata = {
   description: 'Authentication pages',
 };
 
-export default function RootLayout({
+export default function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="light" style={{ colorScheme: 'light' }}>
-      <body className={inter.className}>
-        {children}
-      </body>
-    </html>
+    <div className={inter.className}>
+      {children}
+    </div>
   );
 }
