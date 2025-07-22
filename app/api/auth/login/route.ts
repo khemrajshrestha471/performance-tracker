@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { comparePasswords, generateToken } from '@/lib/auth';
-import { AuthResponse, LoginData } from '../../../../types/auth';
+import { comparePasswords, generateAccessToken, generateRefreshToken } from '@/lib/auth';
+import { LoginData } from '../../../../types/auth';
 
 export async function POST(request: Request) {
   const { email, password }: LoginData = await request.json();
 
-  // Validation
   if (!email || !password) {
     return NextResponse.json(
       { success: false, message: 'Email and password are required' },
@@ -15,7 +14,6 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Check if user exists
     const userResult = await query(
       'SELECT * FROM users WHERE email = $1',
       [email]
@@ -23,14 +21,12 @@ export async function POST(request: Request) {
 
     if (userResult.rows.length === 0) {
       return NextResponse.json(
-        { success: false, message: 'Invalid credentials' }, // Don't specify whether email or password is wrong
+        { success: false, message: 'Invalid credentials' },
         { status: 401 }
       );
     }
 
     const user = userResult.rows[0];
-    
-    // Verify password
     const passwordMatch = await comparePasswords(password, user.password_hash);
     
     if (!passwordMatch) {
@@ -40,29 +36,41 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate JWT token
-    const token = generateToken({
-      id: user.id,
-      email: user.email
-    });
+    // Generate tokens
+    const accessToken = generateAccessToken({ id: user.id });
+    const refreshToken = generateRefreshToken({ id: user.id });
 
-    // Create response with user data (excluding password)
+    // Store refresh token in database
+    await query(
+      'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, NOW() + INTERVAL \'7 days\')',
+      [user.id, refreshToken]
+    );
+
     const { password_hash, ...userWithoutPassword } = user;
     
     const response = NextResponse.json({
       success: true,
       message: 'Login successful',
       user: userWithoutPassword,
-      token
+      accessToken,
+      refreshToken
     });
 
-    // Set HTTP-only cookie
-    response.cookies.set('token', token, {
+    // Set HTTP-only cookies
+    response.cookies.set('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       path: '/',
       sameSite: 'strict',
-      maxAge: 86400 // 1 day
+      maxAge: Number(process.env.ACCESS_TOKEN_EXPIRES_IN)
+    });
+
+    response.cookies.set('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      sameSite: 'strict',
+      maxAge: Number(process.env.REFRESH_TOKEN_EXPIRES_IN)
     });
 
     return response;
@@ -73,7 +81,6 @@ export async function POST(request: Request) {
       { 
         success: false, 
         message: 'Internal server error',
-        // error: process.env.NODE_ENV === 'development' ? error.message : undefined
       },
       { status: 500 }
     );

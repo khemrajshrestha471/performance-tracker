@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { hashPassword, generateToken } from '@/lib/auth';
-import { AuthResponse, SignUpData } from '../../../../types/auth';
+import { hashPassword, generateAccessToken, generateRefreshToken } from '@/lib/auth';
+import { SignUpData } from '../../../../types/auth';
 
 export async function POST(request: Request) {
   const {
@@ -55,31 +55,56 @@ export async function POST(request: Request) {
     );
 
     const user = result.rows[0];
-    const token = generateToken(user);
+    
+    // Generate tokens
+    const accessToken = generateAccessToken({ id: user.id });
+    const refreshToken = generateRefreshToken({ id: user.id });
 
+    // Store refresh token in database
+    await query(
+      'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, NOW() + INTERVAL \'7 days\')',
+      [user.id, refreshToken]
+    );
+
+    // Create response
     const response = NextResponse.json(
       { 
         success: true, 
         message: 'User created successfully',
-        token,
+        accessToken,
+        refreshToken,
         user 
       },
       { status: 201 }
     );
 
-    response.cookies.set('token', token, {
+    // Set HTTP-only cookies
+    response.cookies.set('accessToken', accessToken, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
       path: '/',
       sameSite: 'strict',
-      maxAge: 86400
+      maxAge: Number(process.env.ACCESS_TOKEN_EXPIRES_IN)
+    });
+
+    response.cookies.set('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      sameSite: 'strict',
+      maxAge: Number(process.env.REFRESH_TOKEN_EXPIRES_IN)
     });
 
     return response;
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Signup error:', error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { 
+        success: false, 
+        message: 'Internal server error',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      },
       { status: 500 }
     );
   }

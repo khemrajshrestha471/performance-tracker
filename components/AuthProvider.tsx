@@ -1,31 +1,43 @@
-// src/components/AuthProvider.tsx
 'use client';
 
 import { useEffect } from 'react';
-import { useAuthStore, checkAuth } from '@/store/authStore';
+import { useAuthStore, checkAuth, refreshAccessToken } from '@/store/authStore';
 import { usePathname, useRouter } from 'next/navigation';
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, loading, logout } = useAuthStore();
+  const { isAuthenticated, loading, logout, accessToken } = useAuthStore();
 
   useEffect(() => {
-    const verifyAuth = async () => {
+    // Token refresh interval
+    let refreshInterval: NodeJS.Timeout;
+
+    const setupAuth = async () => {
       const isAuth = await checkAuth();
       
-      // If not authenticated and not on a public page, redirect to login
+      if (isAuth) {
+        // Set up token refresh (every 29 minutes)
+        refreshInterval = setInterval(async () => {
+          await refreshAccessToken();
+        }, 29 * 60 * 1000);
+      }
+
+      // Redirect logic
       if (!isAuth && !['/login', '/signup'].includes(pathname)) {
         router.push('/login');
       }
       
-      // If authenticated and on login/signup page, redirect to home
       if (isAuth && ['/login', '/signup'].includes(pathname)) {
         router.push('/');
       }
     };
 
-    verifyAuth();
+    setupAuth();
+
+    return () => {
+      if (refreshInterval) clearInterval(refreshInterval);
+    };
   }, [pathname, router]);
 
   if (loading) {

@@ -1,20 +1,37 @@
-// src/app/api/auth/logout/route.ts
 import { NextResponse } from 'next/server';
+import { query } from '@/lib/db';
+import { cookies } from 'next/headers';
 
-export async function POST() {
-  const response = NextResponse.json(
-    { success: true, message: 'Logout successful' },
-    { status: 200 }
-  );
+export async function POST(request: Request) {
+  try {
+    const cookieStore = cookies() as unknown as { get: (name: string) => { value: string } | undefined };
+    const refreshToken = cookieStore.get('refreshToken')?.value;
 
-  // Clear the cookie
-  response.cookies.set('token', '', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    sameSite: 'strict',
-    maxAge: 0, // Immediately expire
-  });
+    if (refreshToken) {
+      // Delete refresh token from database
+      await query(
+        'DELETE FROM refresh_tokens WHERE token = $1',
+        [refreshToken]
+      );
+    }
 
-  return response;
+    // Create response
+    const response = NextResponse.json({
+      success: true,
+      message: 'Logout successful'
+    });
+
+    // Clear cookies
+    response.cookies.delete('accessToken');
+    response.cookies.delete('refreshToken');
+
+    return response;
+
+  } catch (error) {
+    console.error('Logout error:', error);
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }

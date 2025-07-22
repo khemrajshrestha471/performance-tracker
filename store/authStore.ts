@@ -1,4 +1,3 @@
-// src/store/authStore.ts
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -15,24 +14,27 @@ type User = {
 
 type AuthState = {
   user: User | null;
-  token: string | null;
+  accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
 };
 
 type AuthActions = {
-  login: (user: User, token: string) => void;
-  signup: (user: User, token: string) => void;
+  login: (user: User, accessToken: string, refreshToken: string) => void;
+  signup: (user: User, accessToken: string, refreshToken: string) => void;
   logout: () => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setUser: (user: User) => void;
+  setTokens: (accessToken: string, refreshToken: string) => void;
 };
 
 const initialState: AuthState = {
   user: null,
-  token: null,
+  accessToken: null,
+  refreshToken: null,
   isAuthenticated: false,
   loading: false,
   error: null,
@@ -42,25 +44,37 @@ export const useAuthStore = create<AuthState & AuthActions>()(
   persist(
     (set) => ({
       ...initialState,
-      login: (user, token) => set({ user, token, isAuthenticated: true, error: null }),
-      signup: (user, token) => set({ user, token, isAuthenticated: true, error: null }),
+      login: (user, accessToken, refreshToken) => set({ 
+        user, 
+        accessToken, 
+        refreshToken, 
+        isAuthenticated: true, 
+        error: null 
+      }),
+      signup: (user, accessToken, refreshToken) => set({ 
+        user, 
+        accessToken, 
+        refreshToken, 
+        isAuthenticated: true, 
+        error: null 
+      }),
       logout: () => set(initialState),
       setLoading: (loading) => set({ loading }),
       setError: (error) => set({ error }),
       setUser: (user) => set({ user }),
+      setTokens: (accessToken, refreshToken) => set({ accessToken, refreshToken }),
     }),
     {
-      name: 'auth-storage', // name of the item in the storage (must be unique)
+      name: 'auth-storage',
       partialize: (state) => ({ 
-        token: state.token,
         user: state.user,
+        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated 
-      }), // persist only these values
+      }),
     }
   )
 );
 
-// Utility function to check auth status
 export const checkAuth = async () => {
   try {
     useAuthStore.getState().setLoading(true);
@@ -74,7 +88,7 @@ export const checkAuth = async () => {
 
     const data = await response.json();
     if (data.success && data.user) {
-      useAuthStore.getState().login(data.user, data.token || '');
+      useAuthStore.getState().login(data.user, data.accessToken, data.refreshToken);
       return true;
     }
     return false;
@@ -83,5 +97,35 @@ export const checkAuth = async () => {
     return false;
   } finally {
     useAuthStore.getState().setLoading(false);
+  }
+};
+
+export const refreshAccessToken = async () => {
+  try {
+    const { refreshToken } = useAuthStore.getState();
+    if (!refreshToken) throw new Error('No refresh token available');
+
+    const response = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to refresh token');
+    }
+
+    const data = await response.json();
+    if (data.success && data.accessToken) {
+      useAuthStore.getState().setTokens(data.accessToken, refreshToken);
+      return data.accessToken;
+    }
+    return null;
+  } catch (error) {
+    console.error('Token refresh failed:', error);
+    useAuthStore.getState().logout();
+    return null;
   }
 };
