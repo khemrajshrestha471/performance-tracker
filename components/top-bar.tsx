@@ -14,8 +14,12 @@ import {
 import { Input } from "@/components/ui/input"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { useAuthStore } from "@/store/authStore"
 
 export function TopBar() {
+  // Get the auth state and actions from the store
+  const { user } = useAuthStore();
+
   return (
     <header className="flex h-14 sm:h-16 items-center justify-between border-b bg-background px-3 sm:px-4 lg:px-6 shrink-0">
       <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
@@ -56,22 +60,30 @@ export function TopBar() {
             <Button variant="ghost" className="relative h-8 w-8 rounded-full shrink-0">
               <Avatar className="h-8 w-8">
                 <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User" />
-                <AvatarFallback>JD</AvatarFallback>
+                <AvatarFallback>
+                  {user ? 
+                    // Get initials from full name
+                    user.full_name.split(' ').map(n => n[0]).join('').toUpperCase() : 
+                    'US'
+                  }
+                </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">John Doe</p>
-                <p className="text-xs leading-none text-muted-foreground">john@acmecorp.com</p>
+                <p className="text-sm font-medium leading-none">
+                  {user?.full_name || 'Guest User'}
+                </p>
+                <p className="text-xs leading-none text-muted-foreground">
+                  {user?.email || 'Not logged in'}
+                </p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>Profile</DropdownMenuItem>
             <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Log out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
