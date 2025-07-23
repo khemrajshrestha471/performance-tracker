@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { comparePasswords, generateAccessToken, generateRefreshToken } from '@/lib/auth';
-import { LoginData } from '../../../../types/auth';
+import { LoginData } from '@/types/auth';
 
 export async function POST(request: Request) {
   const { email, password }: LoginData = await request.json();

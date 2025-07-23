@@ -1,8 +1,17 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { verifyAndRefreshTokens, setAuthCookies, AuthTokens } from '@/lib/authUtils';
 
 export async function POST(request: Request) {
   try {
+    // Verify tokens and get user ID
+    const tokenResult = await verifyAndRefreshTokens();
+    if (tokenResult instanceof NextResponse) {
+      return tokenResult; // This is an error response
+    }
+
+    const { accessToken, refreshToken } = tokenResult as AuthTokens;
+
     const {
       first_name,
       last_name,
@@ -63,11 +72,19 @@ export async function POST(request: Request) {
 
     const newEmployee = employeeResult.rows[0];
 
-    return NextResponse.json({
+    // Create response
+    const response = NextResponse.json({
       success: true,
       message: 'Employee registered successfully',
       employee: newEmployee
     }, { status: 201 });
+
+    // If tokens were refreshed, set new cookies
+    if (tokenResult.accessToken !== accessToken) {
+      setAuthCookies(response, { accessToken, refreshToken });
+    }
+
+    return response;
 
   } catch (error: any) {
     console.error('Employee registration error:', error);
