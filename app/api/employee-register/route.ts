@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { verifyAndRefreshTokens, setAuthCookies, AuthTokens } from '@/lib/authUtils';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: Request) {
   try {
@@ -34,9 +35,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if employee already exists
+    // Check if employee already exists (by email)
     const existingEmployee = await query(
-      'SELECT * FROM employee_personal_details WHERE email = $1',
+      'SELECT * FROM employee_personal_details WHERE email = $1 AND deleted_at IS NULL',
       [email]
     );
 
@@ -47,15 +48,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // Insert personal details
+    // Generate employee_id: "EMP" + last 5 digits of UUID
+    const uuid = uuidv4();
+    const employeeId = 'EMP' + uuid.replace(/-/g, '').slice(-5);
+
+    // Insert personal details with generated employee_id
     const employeeResult = await query(
       `INSERT INTO employee_personal_details (
+        employee_id,
         first_name, last_name, email, phone_number, date_of_birth,
         emergency_contact_name, emergency_contact_phone, current_address,
         permanent_address, marital_status, blood_group
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      RETURNING employee_id, first_name, last_name, email, created_at`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING id, employee_id, first_name, last_name, email, created_at`,
       [
+        employeeId,
         first_name,
         last_name,
         email,
