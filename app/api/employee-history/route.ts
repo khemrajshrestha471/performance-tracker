@@ -96,13 +96,12 @@ export async function POST(request: Request) {
 
     return response;
 
-  } catch (error: any) {
-    console.error('Create history error:', error);
+  } catch (error) {
     return NextResponse.json(
       { 
         success: false, 
         message: 'Internal server error',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        error: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : "An unknown error occurred" : undefined
       },
       { status: 500 }
     );

@@ -7,7 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, loading, logout, accessToken } = useAuthStore();
+  const { loading } = useAuthStore();
 
   useEffect(() => {
     // Token refresh interval

@@ -18,6 +18,13 @@ export async function GET(
     const { accessToken, refreshToken } = tokenResult as AuthTokens;
     const employeeId = params.id;
 
+    if (!/^(EMP|MNG)\d+$/.test(employeeId)) {
+      return NextResponse.json(
+        { success: false, message: "Invalid Employee ID format" },
+        { status: 400 }
+      );
+    }
+
     // Check if employee exists
     const employeeCheck = await query(
       "SELECT employee_id FROM employee_personal_details WHERE employee_id = $1 AND deleted_at IS NULL",
@@ -60,14 +67,13 @@ export async function GET(
     }
 
     return response;
-  } catch (error: any) {
-    console.error("Get employee history error:", error);
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
         message: "Internal server error",
         error:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
+          process.env.NODE_ENV === "development" ? error instanceof Error ? error.message : "An unknown error occurred" : undefined,
       },
       { status: 500 }
     );
@@ -86,6 +92,13 @@ export async function PATCH(
     const { accessToken, refreshToken } = tokenResult as AuthTokens;
     const employeeId = params.id;
     const updateData = await request.json();
+
+    if (!/^(EMP|MNG)\d+$/.test(employeeId)) {
+      return NextResponse.json(
+        { success: false, message: "Invalid Employee ID format" },
+        { status: 400 }
+      );
+    }
 
     // Validate allowed fields
     const allowedFields = [
@@ -255,14 +268,13 @@ export async function PATCH(
 
       return response;
     }
-  } catch (error: any) {
-    console.error("Update employee history error:", error);
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
         message: "Internal server error",
         error:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
+          process.env.NODE_ENV === "development" ? error instanceof Error ? error.message : "An unknown error occurred" : undefined,
       },
       { status: 500 }
     );
@@ -280,6 +292,13 @@ export async function DELETE(
 
     const { accessToken, refreshToken } = tokenResult as AuthTokens;
     const employeeId = params.id;
+
+    if (!/^(EMP|MNG)\d+$/.test(employeeId)) {
+      return NextResponse.json(
+        { success: false, message: "Invalid Employee ID format" },
+        { status: 400 }
+      );
+    }
 
     // Check if employee exists
     const employeeCheck = await query(
@@ -327,14 +346,14 @@ export async function DELETE(
     }
 
     return response;
-  } catch (error: any) {
+  } catch (error) {
     console.error("Delete employee history error:", error);
     return NextResponse.json(
       {
         success: false,
         message: "Internal server error",
         error:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
+          process.env.NODE_ENV === "development" ? error instanceof Error ? error.message : "An unknown error occurred" : undefined,
       },
       { status: 500 }
     );

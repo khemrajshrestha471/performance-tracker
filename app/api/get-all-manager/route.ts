@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { verifyAndRefreshTokens, setAuthCookies, AuthTokens } from '@/lib/authUtils';
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     // Verify tokens
     const tokenResult = await verifyAndRefreshTokens();
@@ -39,13 +39,12 @@ export async function GET(request: Request) {
 
     return response;
 
-  } catch (error: any) {
-    console.error('Get managers error:', error);
+  } catch (error) {
     return NextResponse.json(
       { 
         success: false, 
         message: 'Internal server error',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        error: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : "An unknown error occurred" : undefined
       },
       { status: 500 }
     );

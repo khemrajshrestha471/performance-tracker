@@ -18,7 +18,6 @@ export async function GET(request: Request) {
 
     // Get query parameters for filtering
     const search = searchParams.get('search') || '';
-    const department = searchParams.get('department') || '';
 
     // Get total count of active employees
     const countQuery = `
@@ -76,13 +75,12 @@ export async function GET(request: Request) {
 
     return response;
 
-  } catch (error: any) {
-    console.error('Get employees error:', error);
+  } catch (error) {
     return NextResponse.json(
       { 
         success: false, 
         message: 'Internal server error',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        error: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : "An unknown error occurred" : undefined
       },
       { status: 500 }
     );

@@ -21,9 +21,11 @@ export async function verifyAndRefreshTokens(): Promise<AuthTokens | NextRespons
   }
 
   try {
-    const payload = verifyAccessToken<{ id: number }>(accessToken);
+    // const payload = verifyAccessToken<{ id: number }>(accessToken);
+    const payload = verifyAccessToken(accessToken);
     return { accessToken, refreshToken, userId: payload.id };
   } catch (error) {
+    console.error(error)
     const refreshResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/refresh`, {
       method: 'POST',
       headers: {
@@ -41,7 +43,8 @@ export async function verifyAndRefreshTokens(): Promise<AuthTokens | NextRespons
 
     const refreshData = await refreshResponse.json();
     const newAccessToken = refreshData.accessToken;
-    const payload = verifyAccessToken<{ id: number }>(newAccessToken);
+    // const payload = verifyAccessToken<{ id: number }>(newAccessToken);
+    const payload = verifyAccessToken(newAccessToken);
 
     return { 
       accessToken: newAccessToken, 

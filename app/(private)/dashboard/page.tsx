@@ -70,7 +70,7 @@ export default function Dashboard() {
       <div className="space-y-1">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground text-sm sm:text-base">
-          Welcome back! Here's what's happening with your team.
+          Welcome back! Here&apos;s what&apos;s happening with your team.
         </p>
       </div>
 

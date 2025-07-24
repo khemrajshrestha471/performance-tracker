@@ -8,7 +8,7 @@ export async function GET(request: Request) {
     const tokenResult = await verifyAndRefreshTokens();
     if (tokenResult instanceof NextResponse) return tokenResult;
 
-    const { accessToken, refreshToken, userId } = tokenResult as AuthTokens;
+    const { accessToken, refreshToken } = tokenResult as AuthTokens;
 
     // Get pagination and filter parameters
     const { searchParams } = new URL(request.url);
@@ -101,13 +101,12 @@ export async function GET(request: Request) {
 
     return response;
 
-  } catch (error: any) {
-    console.error('Get deleted employees error:', error);
+  } catch (error) {
     return NextResponse.json(
       { 
         success: false, 
         message: 'Failed to retrieve deleted employees',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        error: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : "An unknown error occurred" : undefined
       },
       { status: 500 }
     );

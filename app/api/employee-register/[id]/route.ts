@@ -18,6 +18,13 @@ export async function GET(
     const { accessToken, refreshToken } = tokenResult as AuthTokens;
     const employeeId = params.id;
 
+    if (!/^(EMP|MNG)\d+$/.test(employeeId)) {
+      return NextResponse.json(
+        { success: false, message: "Invalid Employee ID format" },
+        { status: 400 }
+      );
+    }
+
     // Get only non-deleted employee
     const employeeResult = await query(
       `SELECT 
@@ -49,14 +56,13 @@ export async function GET(
     }
 
     return response;
-  } catch (error: any) {
-    console.error("Get employee error:", error);
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
         message: "Internal server error",
         error:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
+          process.env.NODE_ENV === "development" ? error instanceof Error ? error.message : "An unknown error occurred" : undefined,
       },
       { status: 500 }
     );
@@ -75,6 +81,13 @@ export async function PATCH(
     const { accessToken, refreshToken } = tokenResult as AuthTokens;
     const employeeId = params.id;
     const updateData = await request.json();
+
+    if (!/^(EMP|MNG)\d+$/.test(employeeId)) {
+      return NextResponse.json(
+        { success: false, message: "Invalid Employee ID format" },
+        { status: 400 }
+      );
+    }
 
     // 1. Validate allowed fields including is_manager
     const allowedFields = [
@@ -180,14 +193,13 @@ export async function PATCH(
     }
 
     return response;
-  } catch (error: any) {
-    console.error("Update employee error:", error);
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
         message: "Internal server error",
         error:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
+          process.env.NODE_ENV === "development" ? error instanceof Error ? error.message : "An unknown error occurred" : undefined,
       },
       { status: 500 }
     );
@@ -205,6 +217,13 @@ export async function DELETE(
 
     const { accessToken, refreshToken } = tokenResult as AuthTokens;
     const employeeId = params.id;
+
+    if (!/^(EMP|MNG)\d+$/.test(employeeId)) {
+      return NextResponse.json(
+        { success: false, message: "Invalid Employee ID format" },
+        { status: 400 }
+      );
+    }
 
     // First check if employee exists and isn't already deleted
     const checkEmployee = await query(
@@ -242,14 +261,13 @@ export async function DELETE(
     }
 
     return response;
-  } catch (error: any) {
-    console.error("Delete employee error:", error);
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
         message: "Internal server error",
         error:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
+          process.env.NODE_ENV === "development" ? error instanceof Error ? error.message : "An unknown error occurred" : undefined,
       },
       { status: 500 }
     );
