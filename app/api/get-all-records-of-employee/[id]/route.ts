@@ -22,7 +22,7 @@ export async function GET(
       );
     }
 
-    if (!/^(EMP|MNG)\d+$/.test(employeeId)) {
+    if (!/^(EMP|MNG)[a-zA-Z0-9]+$/.test(employeeId)) {
       return NextResponse.json(
         { success: false, message: "Invalid Employee ID format" },
         { status: 400 }

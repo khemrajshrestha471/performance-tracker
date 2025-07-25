@@ -18,7 +18,7 @@ export async function GET(
     const { accessToken, refreshToken } = tokenResult as AuthTokens;
     const employeeId = params.id;
 
-    if (!/^(EMP|MNG)\d+$/.test(employeeId)) {
+    if (!/^(EMP|MNG)[a-zA-Z0-9]+$/.test(employeeId)) {
       return NextResponse.json(
         { success: false, message: "Invalid Employee ID format" },
         { status: 400 }
@@ -93,7 +93,7 @@ export async function PATCH(
     const employeeId = params.id;
     const updateData = await request.json();
 
-    if (!/^(EMP|MNG)\d+$/.test(employeeId)) {
+    if (!/^(EMP|MNG)[a-zA-Z0-9]+$/.test(employeeId)) {
       return NextResponse.json(
         { success: false, message: "Invalid Employee ID format" },
         { status: 400 }
@@ -293,7 +293,7 @@ export async function DELETE(
     const { accessToken, refreshToken } = tokenResult as AuthTokens;
     const employeeId = params.id;
 
-    if (!/^(EMP|MNG)\d+$/.test(employeeId)) {
+    if (!/^(EMP|MNG)[a-zA-Z0-9]+$/.test(employeeId)) {
       return NextResponse.json(
         { success: false, message: "Invalid Employee ID format" },
         { status: 400 }

@@ -5,6 +5,7 @@ import {
   setAuthCookies,
   AuthTokens,
 } from "@/lib/authUtils";
+import { hashPassword } from "@/lib/auth";
 
 export async function GET(
   request: Request,
@@ -18,7 +19,7 @@ export async function GET(
     const { accessToken, refreshToken } = tokenResult as AuthTokens;
     const employeeId = params.id;
 
-    if (!/^(EMP|MNG)\d+$/.test(employeeId)) {
+    if (!/^(EMP|MNG)[a-zA-Z0-9]+$/.test(employeeId)) {
       return NextResponse.json(
         { success: false, message: "Invalid Employee ID format" },
         { status: 400 }
@@ -62,7 +63,11 @@ export async function GET(
         success: false,
         message: "Internal server error",
         error:
-          process.env.NODE_ENV === "development" ? error instanceof Error ? error.message : "An unknown error occurred" : undefined,
+          process.env.NODE_ENV === "development"
+            ? error instanceof Error
+              ? error.message
+              : "An unknown error occurred"
+            : undefined,
       },
       { status: 500 }
     );
@@ -82,14 +87,32 @@ export async function PATCH(
     const employeeId = params.id;
     const updateData = await request.json();
 
-    if (!/^(EMP|MNG)\d+$/.test(employeeId)) {
+    if (!/^EMP[a-zA-Z0-9]+$/.test(employeeId)) {
       return NextResponse.json(
-        { success: false, message: "Invalid Employee ID format" },
+        {
+          success: false,
+          message: "Only EMP employees can be promoted to manager",
+        },
         { status: 400 }
       );
     }
 
-    // 1. Validate allowed fields including is_manager
+    // Check if this is a manager promotion request
+    const isManagerPromotionRequest = "promote_to_manager" in updateData;
+
+    if (isManagerPromotionRequest) {
+      if (!updateData.password) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Password is required for manager promotion",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Validate allowed fields
     const allowedFields = [
       "first_name",
       "last_name",
@@ -101,105 +124,143 @@ export async function PATCH(
       "permanent_address",
       "marital_status",
       "blood_group",
-      "is_manager",
+      "promote_to_manager",
+      "password",
     ];
 
-    // 2. Check if employee exists and isn't deleted
-    const checkEmployee = await query(
-      "SELECT employee_id, is_manager FROM employee_personal_details WHERE employee_id = $1 AND deleted_at IS NULL",
-      [employeeId]
-    );
+    // Start transaction
+    await query("BEGIN");
 
-    if (checkEmployee.rows.length === 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Employee not found or has been deleted",
-        },
-        { status: 404 }
+    try {
+      // 1. Get employee details
+      const employeeRes = await query(
+        `SELECT * FROM employee_personal_details 
+         WHERE employee_id = $1 AND deleted_at IS NULL`,
+        [employeeId]
       );
-    }
 
-    const currentEmployee = checkEmployee.rows[0];
-    const isBecomingManager =
-      updateData.is_manager === true || updateData.is_manager === "true"
-        ? true
-        : false;
+      if (employeeRes.rows.length === 0) {
+        await query("ROLLBACK");
+        return NextResponse.json(
+          { success: false, message: "Employee not found" },
+          { status: 404 }
+        );
+      }
 
-    // 3. Prepare dynamic update query
-    const fields = [];
-    const values = [];
-    let paramIndex = 1;
+      const employee = employeeRes.rows[0];
+      const managerId = employeeId.replace(/^EMP/, "MNG");
 
-    for (const [key, value] of Object.entries(updateData)) {
-      if (allowedFields.includes(key)) {
-        if (key === "is_manager") {
-          fields.push(`${key} = $${paramIndex}`);
-          values.push(isBecomingManager); // Force boolean
-        } else {
+      // 2. Handle manager promotion
+      if (isManagerPromotionRequest) {
+        // Check if already a manager
+        const managerCheck = await query(
+          "SELECT 1 FROM manager_role WHERE employee_id = $1 OR manager_id = $2",
+          [employeeId, managerId]
+        );
+
+        if (managerCheck.rows.length > 0) {
+          await query("ROLLBACK");
+          return NextResponse.json(
+            { success: false, message: "Employee is already a manager" },
+            { status: 400 }
+          );
+        }
+
+        // Hash the password
+        const hashedPassword = await hashPassword(updateData.password);
+
+        // Insert into manager_role table with MNG prefix for manager_id
+        await query(
+          `INSERT INTO manager_role 
+           (employee_id, manager_id, email, password_hash, created_at) 
+           VALUES ($1, $2, $3, $4, NOW())`,
+          [employeeId, managerId, employee.email, hashedPassword]
+        );
+
+        // Update manager_id in employee_personal_details to MNG version
+        await query(
+          `UPDATE employee_personal_details 
+           SET manager_id = $1, updated_at = NOW()
+           WHERE employee_id = $2`,
+          [managerId, employeeId]
+        );
+      }
+
+      // 3. Handle regular field updates
+      const fields: string[] = [];
+      const values: any[] = [];
+      let paramIndex = 1;
+
+      for (const [key, value] of Object.entries(updateData)) {
+        if (
+          allowedFields.includes(key) &&
+          !["promote_to_manager", "password"].includes(key)
+        ) {
           fields.push(`${key} = $${paramIndex}`);
           values.push(value);
+          paramIndex++;
         }
-        paramIndex++;
       }
-    }
 
-    if (fields.length === 0) {
-      return NextResponse.json(
-        { success: false, message: "No valid fields to update" },
-        { status: 400 }
+      if (fields.length > 0) {
+        values.push(employeeId);
+        await query(
+          `UPDATE employee_personal_details
+           SET ${fields.join(", ")}, updated_at = NOW()
+           WHERE employee_id = $${paramIndex}`,
+          values
+        );
+      }
+
+      // Commit transaction
+      await query("COMMIT");
+
+      // Get updated employee data
+      const result = await query(
+        `SELECT e.*, 
+         CASE WHEN m.employee_id IS NOT NULL THEN true ELSE false END as is_manager,
+         m.manager_id as assigned_manager_id
+         FROM employee_personal_details e
+         LEFT JOIN manager_role m ON e.employee_id = m.employee_id
+         WHERE e.employee_id = $1`,
+        [employeeId]
       );
+
+      // Return response
+      const response = NextResponse.json({
+        success: true,
+        message: isManagerPromotionRequest
+          ? "Employee promoted to manager successfully"
+          : "Employee updated successfully",
+        employee: {
+          ...result.rows[0],
+          // For promoted managers, include the MNG ID in the response
+          manager_id: isManagerPromotionRequest
+            ? managerId
+            : result.rows[0].manager_id,
+        },
+      });
+
+      if (tokenResult.accessToken !== accessToken) {
+        setAuthCookies(response, { accessToken, refreshToken });
+      }
+
+      return response;
+    } catch (error) {
+      await query("ROLLBACK");
+      throw error;
     }
-
-    // Handle employee_id change if becoming manager
-    let newEmployeeId = employeeId;
-    if (isBecomingManager && !currentEmployee.is_manager) {
-      // Change from EMP to MNG prefix
-      newEmployeeId = employeeId.replace(/^EMP/, "MNG");
-      fields.push(`employee_id = $${paramIndex}`);
-      values.push(newEmployeeId);
-      paramIndex++;
-    } else if (!isBecomingManager && currentEmployee.is_manager) {
-      // Change from MNG to EMP prefix
-      newEmployeeId = employeeId.replace(/^MNG/, "EMP");
-      fields.push(`employee_id = $${paramIndex}`);
-      values.push(newEmployeeId);
-      paramIndex++;
-    }
-
-    values.push(employeeId);
-
-    // 4. Execute update
-    const updateQuery = `
-      UPDATE employee_personal_details
-      SET ${fields.join(", ")}, updated_at = NOW()
-      WHERE employee_id = $${paramIndex} AND deleted_at IS NULL
-      RETURNING 
-        employee_id, first_name, last_name, email, 
-        phone_number, is_manager
-    `;
-
-    const result = await query(updateQuery, values);
-
-    // 5. Return response
-    const response = NextResponse.json({
-      success: true,
-      message: "Employee updated successfully",
-      employee: result.rows[0],
-    });
-
-    if (tokenResult.accessToken !== accessToken) {
-      setAuthCookies(response, { accessToken, refreshToken });
-    }
-
-    return response;
   } catch (error) {
     return NextResponse.json(
       {
         success: false,
         message: "Internal server error",
         error:
-          process.env.NODE_ENV === "development" ? error instanceof Error ? error.message : "An unknown error occurred" : undefined,
+          process.env.NODE_ENV === "development"
+            ? error instanceof Error
+              ? error.message
+              : "An unknown error occurred"
+            : undefined,
       },
       { status: 500 }
     );
@@ -218,7 +279,7 @@ export async function DELETE(
     const { accessToken, refreshToken } = tokenResult as AuthTokens;
     const employeeId = params.id;
 
-    if (!/^(EMP|MNG)\d+$/.test(employeeId)) {
+    if (!/^(EMP|MNG)[a-zA-Z0-9]+$/.test(employeeId)) {
       return NextResponse.json(
         { success: false, message: "Invalid Employee ID format" },
         { status: 400 }
@@ -267,7 +328,11 @@ export async function DELETE(
         success: false,
         message: "Internal server error",
         error:
-          process.env.NODE_ENV === "development" ? error instanceof Error ? error.message : "An unknown error occurred" : undefined,
+          process.env.NODE_ENV === "development"
+            ? error instanceof Error
+              ? error.message
+              : "An unknown error occurred"
+            : undefined,
       },
       { status: 500 }
     );
