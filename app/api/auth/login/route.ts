@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       message: "Login successful",
       user: {
         ...userWithoutPassword,
-        role: "Admin", // Explicitly setting role to Admin
+        role: "admin", // Explicitly setting role to Admin
       },
       accessToken,
       refreshToken,
