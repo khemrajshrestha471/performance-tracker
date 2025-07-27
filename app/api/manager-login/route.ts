@@ -18,19 +18,23 @@ export async function POST(request: Request) {
   }
 
   try {
-    const userResult = await query("SELECT * FROM users WHERE email = $1", [
-      email,
-    ]);
+    const managerResult = await query(
+      "SELECT * FROM manager_role WHERE email = $1",
+      [email]
+    );
 
-    if (userResult.rows.length === 0) {
+    if (managerResult.rows.length === 0) {
       return NextResponse.json(
         { success: false, message: "Invalid credentials" },
         { status: 401 }
       );
     }
 
-    const user = userResult.rows[0];
-    const passwordMatch = await comparePasswords(password, user.password_hash);
+    const manager = managerResult.rows[0];
+    const passwordMatch = await comparePasswords(
+      password,
+      manager.password_hash
+    );
 
     if (!passwordMatch) {
       return NextResponse.json(
@@ -39,23 +43,29 @@ export async function POST(request: Request) {
       );
     }
 
-    const accessToken = generateAccessToken(user.id, "admin");
-    const refreshToken = generateRefreshToken(user.id, "admin");
+    const managerForToken = {
+      id: manager.id,
+      employee_id: manager.employee_id,
+      manager_id: manager.manager_id,
+    };
+
+    const accessToken = generateAccessToken(managerForToken, "manager");
+    const refreshToken = generateRefreshToken(managerForToken, "manager");
 
     // Store refresh token in database
     await query(
-      "INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, NOW() + INTERVAL '7 days')",
-      [user.id, refreshToken]
+      "INSERT INTO refresh_tokens (manager_id, token, expires_at) VALUES ($1, $2, NOW() + INTERVAL '7 days')",
+      [manager.id, refreshToken]
     );
 
-    const { password_hash, ...userWithoutPassword } = user;
+    const { password_hash, ...userWithoutPassword } = manager;
 
     const response = NextResponse.json({
       success: true,
       message: "Login successful",
       user: {
         ...userWithoutPassword,
-        role: "Admin", // Explicitly setting role to Admin
+        role: "Manager", // Explicitly setting role to Admin
       },
       accessToken,
       refreshToken,

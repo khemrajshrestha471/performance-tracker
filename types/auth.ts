@@ -10,6 +10,16 @@ export interface User {
   updated_at: Date;
 }
 
+export interface Manager {
+  id: number;
+  employee_id: string;
+  manager_id: string;
+  email: string;
+  password_hash: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
 export interface AuthResponse {
   success: boolean;
   message?: string;
@@ -36,4 +46,11 @@ export interface DecodedToken {
   email: string;
   iat: number;
   exp: number;
+}
+
+export interface TokenPayload {
+  id: number;
+  employee_id?: string;
+  manager_id?: string;
+  role: 'admin' | 'manager';
 }

@@ -1,47 +1,132 @@
-import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
-import { verifyAndRefreshTokens, setAuthCookies, AuthTokens } from '@/lib/authUtils';
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { query } from "@/lib/db";
+import { verifyAccessToken } from "@/lib/auth";
+import { TokenPayload } from "@/types/auth";
 
 export async function GET(request: Request) {
   try {
-    // Verify tokens and get user ID
-    const tokenResult = await verifyAndRefreshTokens();
-    if (tokenResult instanceof NextResponse) {
-      return tokenResult;
-    }
+    // 1. Get token from HTTP-only cookies (with proper await)
+    const cookieStore = await cookies(); // Added await here
+    const token = cookieStore.get("accessToken")?.value;
 
-    const { accessToken, refreshToken, userId } = tokenResult as AuthTokens;
-
-    // Get user data
-    const userResult = await query('SELECT * FROM users WHERE id = $1', [userId]);
-    if (userResult.rows.length === 0) {
+    if (!token) {
       return NextResponse.json(
-        { success: false, message: 'User not found' },
-        { status: 404 }
+        { success: false, message: "Not authenticated or Invalid token!" },
+        { status: 401 }
       );
     }
 
-    const { password_hash, ...user } = userResult.rows[0];
-
-    // Create response
-    const response = NextResponse.json({
-      success: true,
-      user,
-      accessToken,
-      refreshToken
-    });
-
-    // If tokens were refreshed, set new cookies
-    if (tokenResult.accessToken !== accessToken) {
-      setAuthCookies(response, { accessToken, refreshToken });
+    // 2. Verify token
+    let tokenData: TokenPayload;
+    
+    try {
+      tokenData = verifyAccessToken(token);
+    } catch (error) {
+      // Clear invalid token cookie
+      const response = NextResponse.json(
+        { success: false, message: "Invalid or expired token" },
+        { status: 401 }
+      );
+      response.cookies.delete("accessToken");
+      return response;
     }
 
-    return response;
+    // 3. Handle Admin role
+    if (tokenData.role === "admin") {
+      const userResult = await query(
+        `SELECT 
+          id, 
+          full_name, 
+          email, 
+          phone_number, 
+          company_website, 
+          pan_number, 
+          created_at, 
+          updated_at 
+         FROM users 
+         WHERE id = $1`,
+        [tokenData.id]
+      );
+
+      if (userResult.rows.length === 0) {
+        return NextResponse.json(
+          { success: false, message: "Admin user not found" },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        user: {
+          ...userResult.rows[0],
+          role: "admin"
+        }
+      });
+    }
+
+    // 4. Handle Manager role
+    if (tokenData.role === "manager") {
+      if (!tokenData.employee_id) {
+        return NextResponse.json(
+          { success: false, message: "Employee ID missing in token" },
+          { status: 401 }
+        );
+      }
+
+      const managerResult = await query(
+        `SELECT 
+          id, 
+          employee_id, 
+          manager_id, 
+          first_name, 
+          last_name, 
+          email, 
+          phone_number, 
+          date_of_birth, 
+          emergency_contact_name, 
+          emergency_contact_phone, 
+          current_address, 
+          permanent_address, 
+          marital_status, 
+          blood_group, 
+          created_at, 
+          updated_at 
+         FROM employee_personal_details 
+         WHERE employee_id = $1`,
+        [tokenData.employee_id]
+      );
+
+      if (managerResult.rows.length === 0) {
+        return NextResponse.json(
+          { success: false, message: "Manager not found" },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        user: {
+          ...managerResult.rows[0],
+          role: "manager"
+        }
+      });
+    }
+
+    // 5. Handle unknown roles
+    return NextResponse.json(
+      { success: false, message: "Unauthorized role" },
+      { status: 403 }
+    );
 
   } catch (error) {
-    console.error('Auth check error:', error);
+    console.error("Error in /api/auth/me:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      {
+        success: false,
+        message: "Internal server error",
+        error: error instanceof Error ? error.message : "Unknown error"
+      },
       { status: 500 }
     );
   }
