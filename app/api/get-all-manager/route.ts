@@ -1,6 +1,10 @@
-import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
-import { verifyAndRefreshTokens, setAuthCookies, AuthTokens } from '@/lib/authUtils';
+import { NextResponse } from "next/server";
+import { query } from "@/lib/db";
+import {
+  verifyAndRefreshTokens,
+  setAuthCookies,
+  AuthTokens,
+} from "@/lib/authUtils";
 
 export async function GET() {
   try {
@@ -13,16 +17,16 @@ export async function GET() {
     // Get all active managers (non-deleted)
     const managersResult = await query(
       `SELECT 
-        employee_id, 
+        employee_id,
+        manager_id, 
         first_name, 
         last_name, 
         email, 
         phone_number,
-        date_of_birth,
-        is_manager
+        date_of_birth
        FROM employee_personal_details 
-       WHERE is_manager = true 
-       AND deleted_at IS NULL
+       WHERE deleted_at IS NULL
+       AND manager_id IS NOT NULL
        ORDER BY last_name, first_name`,
       []
     );
@@ -30,7 +34,7 @@ export async function GET() {
     const response = NextResponse.json({
       success: true,
       count: managersResult.rows.length,
-      managers: managersResult.rows
+      managers: managersResult.rows,
     });
 
     if (tokenResult.accessToken !== accessToken) {
@@ -38,13 +42,17 @@ export async function GET() {
     }
 
     return response;
-
   } catch (error) {
     return NextResponse.json(
-      { 
-        success: false, 
-        message: 'Internal server error',
-        error: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : "An unknown error occurred" : undefined
+      {
+        success: false,
+        message: "Internal server error",
+        error:
+          process.env.NODE_ENV === "development"
+            ? error instanceof Error
+              ? error.message
+              : "An unknown error occurred"
+            : undefined,
       },
       { status: 500 }
     );

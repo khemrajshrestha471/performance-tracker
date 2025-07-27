@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { apiAxios } from '@/lib/apiAxios';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -25,19 +26,21 @@ export default function SignupPage() {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      // const response = await fetch('/api/auth/signup', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify(formData),
+      // });
 
-      const data = await response.json();
+      // const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Signup failed');
-      }
+      // if (!response.ok) {
+      //   throw new Error(data.message || 'Signup failed');
+      // }
+
+      await apiAxios.post('/api/auth/signup', formData);
 
       // Redirect to dashboard or home page after successful signup
       router.push('/dashboard');

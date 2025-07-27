@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import { apiAxios } from '@/lib/apiAxios';
 
 export default function SignUpForm() {
   const [formData, setFormData] = useState({
@@ -28,19 +29,21 @@ export default function SignUpForm() {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      // const response = await fetch('/api/auth/signup', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify(formData),
+      // });
 
-      const data = await response.json();
+      // const data = await response.json();
 
-      if (!data.success) {
-        throw new Error(data.message);
-      }
+      // if (!data.success) {
+      //   throw new Error(data.message);
+      // }
+
+      await apiAxios.post('/api/auth/signup', formData);
 
       router.push('/dashboard');
     } catch (err) {

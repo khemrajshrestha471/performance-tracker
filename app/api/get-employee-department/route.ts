@@ -6,6 +6,7 @@ import {
   AuthTokens,
 } from "@/lib/authUtils";
 import { Department, DepartmentValues } from "@/types/enum";
+import { apiAxios } from "@/lib/apiAxios";
 
 export async function GET(request: Request) {
   try {
@@ -14,23 +15,21 @@ export async function GET(request: Request) {
     if (tokenResult instanceof NextResponse) return tokenResult;
 
     const { accessToken, refreshToken } = tokenResult as AuthTokens;
-
-    // First get user info from /api/auth/me
-    const authMeResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`, {
-      headers: {
-        'Cookie': request.headers.get('Cookie') || '',
-      }
-    });
-
-    if (!authMeResponse.ok) {
+    let authMeResponse;
+    try {
+      authMeResponse = await apiAxios.get("/api/auth/me", {
+        headers: {
+          Cookie: request.headers.get("Cookie") || "",
+        },
+      });
+    } catch (error: any) {
       return NextResponse.json(
         { success: false, message: "Failed to fetch user information" },
-        { status: authMeResponse.status }
+        { status: error.response?.status || 500 }
       );
     }
 
-    const authMeData = await authMeResponse.json();
-    const userDepartment = authMeData.user?.department;
+    const userDepartment = authMeResponse.data?.user?.department;
 
     // Get query parameters from URL
     const { searchParams } = new URL(request.url);
@@ -59,11 +58,11 @@ export async function GET(request: Request) {
     // Check if user's department matches the requested department
     if (userDepartment !== requestedDepartment) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           message: "Not authorized to access this department's data",
           yourDepartment: userDepartment,
-          requestedDepartment: requestedDepartment
+          requestedDepartment: requestedDepartment,
         },
         { status: 403 }
       );
