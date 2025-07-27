@@ -5,7 +5,7 @@ import {
   setAuthCookies,
   AuthTokens,
 } from "@/lib/authUtils";
-import { Department, DepartmentValues } from "@/types/enum"; // Adjust import path
+import { Department, DepartmentValues } from "@/types/enum";
 
 export async function GET(request: Request) {
   try {
@@ -15,12 +15,29 @@ export async function GET(request: Request) {
 
     const { accessToken, refreshToken } = tokenResult as AuthTokens;
 
+    // First get user info from /api/auth/me
+    const authMeResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`, {
+      headers: {
+        'Cookie': request.headers.get('Cookie') || '',
+      }
+    });
+
+    if (!authMeResponse.ok) {
+      return NextResponse.json(
+        { success: false, message: "Failed to fetch user information" },
+        { status: authMeResponse.status }
+      );
+    }
+
+    const authMeData = await authMeResponse.json();
+    const userDepartment = authMeData.user?.department;
+
     // Get query parameters from URL
     const { searchParams } = new URL(request.url);
-    const departmentName = searchParams.get("department");
+    const requestedDepartment = searchParams.get("department");
 
-    // Validate department parameter
-    if (!departmentName) {
+    // Validate department parameter exists
+    if (!requestedDepartment) {
       return NextResponse.json(
         { success: false, message: "Department parameter is required" },
         { status: 400 }
@@ -28,7 +45,7 @@ export async function GET(request: Request) {
     }
 
     // Validate department is in enum
-    if (!DepartmentValues.includes(departmentName as Department)) {
+    if (!DepartmentValues.includes(requestedDepartment as Department)) {
       return NextResponse.json(
         {
           success: false,
@@ -36,6 +53,19 @@ export async function GET(request: Request) {
           validDepartments: DepartmentValues,
         },
         { status: 400 }
+      );
+    }
+
+    // Check if user's department matches the requested department
+    if (userDepartment !== requestedDepartment) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: "Not authorized to access this department's data",
+          yourDepartment: userDepartment,
+          requestedDepartment: requestedDepartment
+        },
+        { status: 403 }
       );
     }
 
@@ -58,7 +88,7 @@ export async function GET(request: Request) {
       WHERE h.department_name = $1
       AND p.deleted_at IS NULL
       ORDER BY h.start_date DESC`,
-      [departmentName]
+      [requestedDepartment]
     );
 
     const response = NextResponse.json(
