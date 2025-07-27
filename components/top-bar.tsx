@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { useAuthStore } from "@/store/authStore"
+import { isAdminUser, useAuthStore } from "@/store/authStore"
 
 export function TopBar() {
   // Get the auth state and actions from the store
@@ -56,30 +56,41 @@ export function TopBar() {
         <ThemeToggle />
 
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          {/* <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full shrink-0">
               <Avatar className="h-8 w-8">
-                <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User" />
+                <AvatarImage alt="User" />
                 <AvatarFallback>
-                  {/* {user ? 
-                    user.full_name.split(' ').map(n => n[0]).join('').toUpperCase() : 
-                    'US'
-                  } */}
                 </AvatarFallback>
               </Avatar>
             </Button>
-          </DropdownMenuTrigger>
+          </DropdownMenuTrigger> */}
+          <DropdownMenuTrigger asChild>
+  <Button variant="ghost" className="relative h-8 w-8 rounded-full shrink-0">
+    <Avatar className="h-8 w-8">
+      <AvatarImage alt="User" />
+      <AvatarFallback>
+        {user ? (
+          isAdminUser(user) ? (
+            user.full_name
+              .split(' ')
+              .map(name => name[0])
+              .join('')
+              .toUpperCase()
+          ) : (
+            // `${user.first_name[0]}${user.last_name[0]}`.toUpperCase()
+            // user.first_name
+            "MR"
+              
+          )
+        ) : (
+          'U'
+        )}
+      </AvatarFallback>
+    </Avatar>
+  </Button>
+</DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end" forceMount>
-            <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">
-                  {/* {user?.full_name || 'Guest User'} */}
-                </p>
-                <p className="text-xs leading-none text-muted-foreground">
-                  {user?.email || 'Not logged in'}
-                </p>
-              </div>
-            </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>Profile</DropdownMenuItem>
             <DropdownMenuItem>Settings</DropdownMenuItem>

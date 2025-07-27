@@ -9,15 +9,27 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { loading, login, isAuthenticated, user } = useAuthStore();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const { loading, login, isAuthenticated, user, checkAuth } = useAuthStore();
   const router = useRouter();
 
-  // Check if user is already authenticated
+  // Check authentication status on initial load
   useEffect(() => {
-    if (isAuthenticated && user) {
-      router.push("/dashboard");
-    }
-  }, [isAuthenticated, user, router]);
+    const verifyAuth = async () => {
+      try {
+        const isAuth = await checkAuth();
+        if (isAuth) {
+          router.push("/dashboard");
+        }
+      } catch (err) {
+        console.error("Auth check failed:", err);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    verifyAuth();
+  }, [checkAuth, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,8 +67,12 @@ export default function LoginPage() {
     }
   };
 
-  if (isAuthenticated && user) {
-    return null; // or a loading spinner while redirect happens
+  if (isCheckingAuth || (isAuthenticated && user)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">Loading...</div>
+      </div>
+    );
   }
 
   return (
