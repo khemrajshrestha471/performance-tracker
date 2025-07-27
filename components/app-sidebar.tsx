@@ -118,13 +118,12 @@ export function AppSidebar() {
     }
   }, [pathname, user, router]);
 
-  // Determine which menu items to show based on user role
   const menuItems = user?.role === "admin" ? adminMenuItems : managerMenuItems;
 
   const handleLogout = async () => {
     try {
-      await logout(); // Clear client-side state
-      router.push("/login"); // Redirect to login page
+      await logout();
+      router.push("/login");
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -133,15 +132,19 @@ export function AppSidebar() {
   return (
     <Sidebar className="border-r">
       <SidebarHeader className="p-6">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Building2 className="h-4 w-4" />
+        <Link href="/">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <Building2 className="h-4 w-4" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold">PerfTrack</span>
+              <span className="text-xs text-muted-foreground">
+                Tracker Tool
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold">Performance</span>
-            <span className="text-xs text-muted-foreground">Tracker</span>
-          </div>
-        </div>
+        </Link>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
