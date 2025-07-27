@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/authStore";
 import axios, { AxiosError } from "axios";
 
@@ -9,8 +9,15 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { loading, login } = useAuthStore();
+  const { loading, login, isAuthenticated, user } = useAuthStore();
   const router = useRouter();
+
+  // Check if user is already authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,18 +42,32 @@ export default function LoginPage() {
 
       if (data.success) {
         login(data.user, data.accessToken, data.refreshToken);
-        router.push("/");
+        router.push("/dashboard");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An unknown error occurred");
+      let errorMessage = "An unknown error occurred";
+      if (err instanceof AxiosError) {
+        errorMessage = err.response?.data?.message || err.message;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      setError(errorMessage);
     }
   };
 
+  if (isAuthenticated && user) {
+    return null; // or a loading spinner while redirect happens
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="p-8 rounded shadow-md w-full max-w-md">
+      <div className="p-8 rounded-lg shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold mb-6 text-center">Admin Login</h1>
-        {error && <div className="mb-4 text-red-500 text-sm">{error}</div>}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded">
+            {error}
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label
@@ -60,8 +81,9 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border rounded"
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
+              autoComplete="username"
             />
           </div>
           <div className="mb-6">
@@ -76,14 +98,15 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border rounded"
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
+              autoComplete="current-password"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? "Logging in..." : "Login"}
           </button>

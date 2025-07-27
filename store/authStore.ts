@@ -1,11 +1,11 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 // Base user type with common fields
 type BaseUser = {
   id: number;
   email: string;
-  role: 'admin' | 'manager';
+  role: "admin" | "manager";
   phone_number?: string;
   created_at: string;
   updated_at: string;
@@ -13,7 +13,7 @@ type BaseUser = {
 
 // Admin-specific fields
 type AdminUser = BaseUser & {
-  role: 'admin';
+  role: "admin";
   full_name: string;
   email: string;
   phone_number: string;
@@ -23,7 +23,7 @@ type AdminUser = BaseUser & {
 
 // Manager-specific fields
 type EmployeeUser = BaseUser & {
-  role: 'manager';
+  role: "manager";
   employee_id: string;
   manager_id?: string;
   first_name: string;
@@ -75,129 +75,160 @@ export const useAuthStore = create<AuthState & AuthActions>()(
   persist(
     (set, get) => ({
       ...initialState,
-      
-      login: (user, accessToken, refreshToken) => set({ 
-        user,
-        accessToken, 
-        refreshToken, 
-        isAuthenticated: true, 
-        error: null,
-        loading: false
-      }),
-      
-      signup: (user, accessToken, refreshToken) => set({ 
-        user,
-        accessToken, 
-        refreshToken, 
-        isAuthenticated: true, 
-        error: null,
-        loading: false
-      }),
-      
+
+      login: (user, accessToken, refreshToken) =>
+        set({
+          user,
+          accessToken,
+          refreshToken,
+          isAuthenticated: true,
+          error: null,
+          loading: false,
+        }),
+
+      signup: (user, accessToken, refreshToken) =>
+        set({
+          user,
+          accessToken,
+          refreshToken,
+          isAuthenticated: true,
+          error: null,
+          loading: false,
+        }),
+
       logout: () => {
         // Clear HTTP-only cookies by hitting logout endpoint
-        fetch('/api/auth/logout', {
-          method: 'POST',
-          credentials: 'include'
+        fetch("/api/auth/logout", {
+          method: "POST",
+          credentials: "include",
         }).catch(console.error);
-        
+
         set(initialState);
       },
-      
+
       setLoading: (loading) => set({ loading }),
-      
+
       setError: (error) => set({ error }),
-      
+
       setUser: (user) => set({ user }),
-      
-      setTokens: (accessToken, refreshToken) => set({ accessToken, refreshToken }),
-      
+
+      setTokens: (accessToken, refreshToken) =>
+        set({ accessToken, refreshToken }),
+
       checkAuth: async () => {
         try {
           set({ loading: true });
-          const response = await fetch('/api/auth/me', {
-            credentials: 'include',
+          const response = await fetch("/api/auth/me", {
+            credentials: "include",
           });
 
           if (!response.ok) {
-            throw new Error('Not authenticated');
+            throw new Error("Not authenticated");
           }
 
           const data = await response.json();
           if (data.success && data.user) {
-            get().login(data.user, data.accessToken || get().accessToken, data.refreshToken || get().refreshToken);
+            get().login(
+              data.user,
+              data.accessToken || get().accessToken,
+              data.refreshToken || get().refreshToken
+            );
             return true;
           }
           return false;
         } catch (error) {
-          set({ error: error instanceof Error ? error.message : 'Authentication failed' });
+          set({
+            error:
+              error instanceof Error ? error.message : "Authentication failed",
+          });
           get().logout();
           return false;
         } finally {
           set({ loading: false });
         }
       },
-      
+
       refreshAccessToken: async () => {
         try {
           const { refreshToken } = get();
-          if (!refreshToken) throw new Error('No refresh token available');
+          if (!refreshToken) throw new Error("No refresh token available");
 
-          const response = await fetch('/api/auth/refresh', {
-            method: 'POST',
+          const response = await fetch("/api/auth/refresh", {
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
-            credentials: 'include',
+            credentials: "include",
             body: JSON.stringify({ refreshToken }),
           });
 
           if (!response.ok) {
-            throw new Error('Failed to refresh token');
+            throw new Error("Failed to refresh token");
           }
 
           const data = await response.json();
           if (data.success && data.accessToken) {
-            get().setTokens(data.accessToken, data.refreshToken || refreshToken);
+            get().setTokens(
+              data.accessToken,
+              data.refreshToken || refreshToken
+            );
             return data.accessToken;
           }
           return null;
         } catch (error) {
-          console.error('Token refresh failed:', error);
-          set({ error: error instanceof Error ? error.message : 'Token refresh failed' });
+          console.error("Token refresh failed:", error);
+          set({
+            error:
+              error instanceof Error ? error.message : "Token refresh failed",
+          });
           get().logout();
           return null;
         }
-      }
+      },
     }),
     {
-      name: 'auth-storage',
-      partialize: (state) => ({ 
+      name: "auth-storage",
+      partialize: (state) => ({
         user: state.user,
         refreshToken: state.refreshToken,
-        isAuthenticated: state.isAuthenticated 
+        isAuthenticated: state.isAuthenticated,
       }),
-      version: 1 // Increment if you make breaking changes to the store structure
+      version: 1, // Increment if you make breaking changes to the store structure
+      migrate: (persistedState, version) => {
+        // If the version is 0 (no version was set before), you might need to migrate
+        if (version === 0) {
+          // Handle migration from unversioned to version 1
+          return persistedState as AuthState;
+        }
+
+        // If the version matches, just return the persisted state
+        if (version === 1) {
+          return persistedState as AuthState;
+        }
+
+        // If the version is higher than expected, you might want to reset or handle differently
+        return initialState;
+      },
     }
   )
 );
 
 // Type guard functions
 export function isAdminUser(user: User): user is AdminUser {
-  return user.role === 'admin';
+  return user.role === "admin";
 }
 
 export function isManagerUser(user: User): user is EmployeeUser {
-  return user.role === 'manager';
+  return user.role === "manager";
 }
 
 // Helper hooks for specific user types
 export const useAdminUser = () => {
-  const user = useAuthStore(state => state.user);
+  const user = useAuthStore((state) => state.user);
   return user && isAdminUser(user) ? user : null;
 };
 
 export const useManagerUser = () => {
-  const user = useAuthStore(state => state.user);
+  const user = useAuthStore((state) => state.user);
   return user && isManagerUser(user) ? user : null;
 };

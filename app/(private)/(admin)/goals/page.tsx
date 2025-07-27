@@ -301,7 +301,8 @@ export default function GoalsPage() {
                       <span
                         className={`truncate ${isOverdue(goal.deadline, goal.status) ? "text-red-600" : "text-muted-foreground"}`}
                       >
-                        {new Date(goal.deadline).toLocaleDateString()}
+                        {/* {new Date(goal.deadline).toLocaleDateString()} */}
+                        {new Date(goal.deadline).toISOString().split('T')[0]}
                       </span>
                     </div>
                     {getStatusBadge(goal.status)}
