@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { Bell, ChevronDown, Search } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
+import { Bell, ChevronDown, Search } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,11 +10,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { SidebarTrigger } from "@/components/ui/sidebar"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { isAdminUser, useAuthStore } from "@/store/authStore"
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { isAdminUser, useAuthStore } from "@/store/authStore";
 
 export function TopBar() {
   // Get the auth state and actions from the store
@@ -33,7 +33,10 @@ export function TopBar() {
       <div className="flex items-center gap-1 sm:gap-2 lg:gap-4 shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="gap-2 bg-transparent hidden sm:flex">
+            <Button
+              variant="outline"
+              className="gap-2 bg-transparent hidden sm:flex"
+            >
               <span className="hidden lg:inline">Acme Corp</span>
               <span className="sm:hidden lg:hidden">Acme</span>
               <ChevronDown className="h-4 w-4" />
@@ -56,40 +59,27 @@ export function TopBar() {
         <ThemeToggle />
 
         <DropdownMenu>
-          {/* <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full shrink-0">
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="relative h-8 w-8 rounded-full shrink-0"
+            >
               <Avatar className="h-8 w-8">
                 <AvatarImage alt="User" />
                 <AvatarFallback>
+                  {user
+                    ? isAdminUser(user)
+                      ? user.full_name
+                          .split(" ")
+                          .map((name) => name[0])
+                          .join("")
+                          .toUpperCase()
+                      : "MN"
+                    : "U"}
                 </AvatarFallback>
               </Avatar>
             </Button>
-          </DropdownMenuTrigger> */}
-          <DropdownMenuTrigger asChild>
-  <Button variant="ghost" className="relative h-8 w-8 rounded-full shrink-0">
-    <Avatar className="h-8 w-8">
-      <AvatarImage alt="User" />
-      <AvatarFallback>
-        {user ? (
-          isAdminUser(user) ? (
-            user.full_name
-              .split(' ')
-              .map(name => name[0])
-              .join('')
-              .toUpperCase()
-          ) : (
-            // `${user.first_name[0]}${user.last_name[0]}`.toUpperCase()
-            // user.first_name
-            "MR"
-              
-          )
-        ) : (
-          'U'
-        )}
-      </AvatarFallback>
-    </Avatar>
-  </Button>
-</DropdownMenuTrigger>
+          </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuSeparator />
             <DropdownMenuItem>Profile</DropdownMenuItem>
@@ -98,5 +88,5 @@ export function TopBar() {
         </DropdownMenu>
       </div>
     </header>
-  )
+  );
 }
