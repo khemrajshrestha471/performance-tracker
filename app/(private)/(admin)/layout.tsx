@@ -1,13 +1,29 @@
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { TopBar } from "@/components/top-bar"
-import AuthProvider from "@/components/AuthProvider"
+import { cookies } from "next/headers"
+import { verifyAccessToken } from "@/lib/auth"
+import { redirect } from "next/navigation"
 
-export default function PrivateLayout({
+export default async function PrivateLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  // Server-side authentication check
+  const cookieStore = await cookies()
+  const token = cookieStore.get('accessToken')?.value
+
+  if (!token) {
+    redirect('/login')
+  }
+
+  try {
+    verifyAccessToken(token)
+  } catch (error) {
+    redirect('/login')
+  }
+
   return (
     <SidebarProvider defaultOpen={true}>
       <div className={`flex min-h-screen w-full overflow-hidden`}>
@@ -15,9 +31,7 @@ export default function PrivateLayout({
         <div className="flex-1 flex flex-col min-w-0">
           <TopBar />
           <main className="flex-1 p-3 sm:p-4 lg:p-6 bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
-            <AuthProvider>
-              {children}
-            </AuthProvider>
+            {children}
           </main>
         </div>
       </div>

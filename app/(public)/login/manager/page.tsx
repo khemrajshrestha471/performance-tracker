@@ -18,7 +18,7 @@ export default function LoginPage() {
 
     try {
       const response = await axios.post(
-        "/api/auth/login",
+        "/api/manager-login",
         {
           email,
           password,
@@ -45,7 +45,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="p-8 rounded shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Admin Login</h1>
+        <h1 className="text-2xl font-bold mb-6 text-center">Manager Login</h1>
         {error && <div className="mb-4 text-red-500 text-sm">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="mb-4">

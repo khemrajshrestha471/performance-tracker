@@ -1,9 +1,18 @@
-"use client"
+"use client";
 
-import { BarChart3, Building2, FileText, Home, LogOut, Settings, Target, Users } from "lucide-react"
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { useAuthStore } from "@/store/authStore"
+import {
+  BarChart3,
+  Building2,
+  FileText,
+  Home,
+  LogOut,
+  Settings,
+  Target,
+  Users,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
 
 import {
   Sidebar,
@@ -14,7 +23,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
 const menuItems = [
   {
@@ -47,29 +56,26 @@ const menuItems = [
     url: "/settings",
     icon: Settings,
   },
-]
+  {
+    title: "Author",
+    url: "/author",
+    icon: Settings,
+  },
+];
 
 export function AppSidebar() {
-  const pathname = usePathname()
-  const router = useRouter()
-  const { logout } = useAuthStore() // Get logout function from your store
+  const pathname = usePathname();
+  const router = useRouter();
+  const { logout } = useAuthStore(); // Get logout function from your store
 
   const handleLogout = async () => {
     try {
-      // Call your logout API
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      })
-
-      if (response.ok) {
-        logout() // Clear client-side state
-        router.push('/login') // Redirect to login page
-      }
+      logout(); // Clear client-side state
+      router.push("/login"); // Redirect to login page
     } catch (error) {
-      console.error('Logout failed:', error)
+      console.error("Logout failed:", error);
     }
-  }
+  };
 
   return (
     <Sidebar className="border-r">
@@ -101,7 +107,7 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        
+
         <SidebarGroup className="mt-auto">
           <SidebarGroupContent>
             <SidebarMenu>
@@ -116,5 +122,5 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>
-  )
+  );
 }
