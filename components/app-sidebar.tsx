@@ -138,7 +138,7 @@ export function AppSidebar() {
               <Building2 className="h-4 w-4" />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-semibold">PerfTrack</span>
+              <span className="text-sm text-muted-foreground font-semibold">PerfTrack</span>
               <span className="text-xs text-muted-foreground">
                 Tracker Tool
               </span>

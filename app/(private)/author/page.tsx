@@ -89,6 +89,14 @@ const DashboardPage = () => {
               <p className="font-medium">{managerUser.phone_number || 'Not provided'}</p>
             </div>
             <div>
+              <p>Department:</p>
+              <p className="font-medium">{managerUser.department || 'Not provided'}</p>
+            </div>
+            <div>
+              <p>Designation:</p>
+              <p className="font-medium">{managerUser.designation || 'Not provided'}</p>
+            </div>
+            <div>
               <p>Date of Birth:</p>
               <p className="font-medium">{managerUser.date_of_birth || 'Not provided'}</p>
             </div>

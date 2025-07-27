@@ -60,7 +60,7 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Navigation Bar */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+      <header className="sticky top-0">
         <div className="container flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2">
             <Building2 className="h-6 w-6 text-primary" />
@@ -119,23 +119,25 @@ export default function Home() {
         {/* Clients Section */}
         <section className="py-12 bg-muted/50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p className="text-center text-sm text-muted-foreground mb-8">
+            <p className="text-sm text-muted-foreground text-center">
               TRUSTED BY INDUSTRY LEADERS
             </p>
             <div className="flex flex-wrap justify-center gap-8 md:gap-16 items-center">
-              {["tata", "fuse", "leapfrog", "nvidia", "microsoft"].map((logo) => (
-                <div
-                  key={logo}
-                  className="relative h-20 w-32 grayscale opacity-70 hover:opacity-100 transition-opacity"
-                >
-                  <Image
-                    src={`/${logo}.png`}
-                    alt={`${logo} logo`}
-                    fill
-                    className="object-contain"
-                  />
-                </div>
-              ))}
+              {["tata", "fuse", "leapfrog", "nvidia", "microsoft"].map(
+                (logo) => (
+                  <div
+                    key={logo}
+                    className="relative h-20 w-32 grayscale opacity-70 hover:opacity-100 transition-opacity"
+                  >
+                    <Image
+                      src={`/${logo}.png`}
+                      alt={`${logo} logo`}
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                )
+              )}
             </div>
           </div>
         </section>

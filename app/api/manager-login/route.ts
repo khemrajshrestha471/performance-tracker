@@ -18,6 +18,7 @@ export async function POST(request: Request) {
   }
 
   try {
+    // 1. First check manager credentials
     const managerResult = await query(
       "SELECT * FROM manager_role WHERE email = $1",
       [email]
@@ -43,41 +44,74 @@ export async function POST(request: Request) {
       );
     }
 
+    // 2. Get current department information
+    const departmentResult = await query(
+      `SELECT department_name 
+       FROM department_designation_history 
+       WHERE employee_id = $1 
+       AND is_active = true
+       ORDER BY start_date DESC
+       LIMIT 1`,
+      [manager.employee_id]
+    );
+
+    // 3. Get current designation information (added based on your table structure)
+    const designationResult = await query(
+      `SELECT designation
+       FROM department_designation_history 
+       WHERE employee_id = $1 
+       AND is_active = true
+       ORDER BY start_date DESC
+       LIMIT 1`,
+      [manager.employee_id]
+    );
+
+    const department = departmentResult.rows[0]?.department_name || null;
+    const designation = designationResult.rows[0]?.designation || null;
+
+    // 4. Prepare token payload
     const managerForToken = {
       id: manager.id,
       employee_id: manager.employee_id,
       manager_id: manager.manager_id,
+      department, // Include department in token if needed
+      designation // Include designation in token if needed
     };
 
+    // 5. Generate tokens
     const accessToken = generateAccessToken(managerForToken, "manager");
     const refreshToken = generateRefreshToken(managerForToken, "manager");
 
-    // Store refresh token in database
+    // 6. Store refresh token in database
     await query(
       "INSERT INTO refresh_tokens (manager_id, token, expires_at) VALUES ($1, $2, NOW() + INTERVAL '7 days')",
       [manager.id, refreshToken]
     );
 
+    // 7. Remove sensitive data from response
     const { password_hash, ...userWithoutPassword } = manager;
 
+    // 8. Prepare response
     const response = NextResponse.json({
       success: true,
       message: "Login successful",
       user: {
         ...userWithoutPassword,
-        role: "manager", // Explicitly setting role to Admin
+        role: "manager",
+        department,
+        designation
       },
       accessToken,
       refreshToken,
     });
 
-    // Set HTTP-only cookies
+    // 9. Set HTTP-only cookies
     response.cookies.set("accessToken", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       path: "/",
       sameSite: "strict",
-      maxAge: Number(process.env.ACCESS_TOKEN_EXPIRES_IN),
+      maxAge: 60 * 60 * 24 * 1, // 1 day in seconds
     });
 
     response.cookies.set("refreshToken", refreshToken, {
@@ -85,7 +119,7 @@ export async function POST(request: Request) {
       secure: process.env.NODE_ENV === "production",
       path: "/",
       sameSite: "strict",
-      maxAge: Number(process.env.REFRESH_TOKEN_EXPIRES_IN),
+      maxAge: 60 * 60 * 24 * 7, // 7 days in seconds
     });
 
     return response;

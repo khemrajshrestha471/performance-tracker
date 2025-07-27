@@ -22,7 +22,7 @@ type AdminUser = BaseUser & {
 };
 
 // Manager-specific fields
-type EmployeeUser = BaseUser & {
+type ManagerUser = BaseUser & {
   role: "manager";
   employee_id: string;
   manager_id?: string;
@@ -37,9 +37,11 @@ type EmployeeUser = BaseUser & {
   permanent_address?: string;
   marital_status?: string;
   blood_group?: string;
+  department: string | null;
+  designation: string | null;
 };
 
-type User = AdminUser | EmployeeUser;
+type User = AdminUser | ManagerUser;
 
 type AuthState = {
   user: User | null;
@@ -193,20 +195,14 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
-      version: 1, // Increment if you make breaking changes to the store structure
+      version: 1,
       migrate: (persistedState, version) => {
-        // If the version is 0 (no version was set before), you might need to migrate
         if (version === 0) {
-          // Handle migration from unversioned to version 1
           return persistedState as AuthState;
         }
-
-        // If the version matches, just return the persisted state
         if (version === 1) {
           return persistedState as AuthState;
         }
-
-        // If the version is higher than expected, you might want to reset or handle differently
         return initialState;
       },
     }
@@ -218,7 +214,7 @@ export function isAdminUser(user: User): user is AdminUser {
   return user.role === "admin";
 }
 
-export function isManagerUser(user: User): user is EmployeeUser {
+export function isManagerUser(user: User): user is ManagerUser {
   return user.role === "manager";
 }
 
@@ -230,5 +226,12 @@ export const useAdminUser = () => {
 
 export const useManagerUser = () => {
   const user = useAuthStore((state) => state.user);
-  return user && isManagerUser(user) ? user : null;
+  if (user && isManagerUser(user)) {
+    return {
+      ...user,
+      department: user.department || null,
+      designation: user.designation || null
+    };
+  }
+  return null;
 };

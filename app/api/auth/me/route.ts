@@ -6,8 +6,8 @@ import { TokenPayload } from "@/types/auth";
 
 export async function GET(request: Request) {
   try {
-    // 1. Get token from HTTP-only cookies (with proper await)
-    const cookieStore = await cookies(); // Added await here
+    // 1. Get token from HTTP-only cookies
+    const cookieStore = await cookies();
     const token = cookieStore.get("accessToken")?.value;
 
     if (!token) {
@@ -74,6 +74,7 @@ export async function GET(request: Request) {
         );
       }
 
+      // Get manager's personal details
       const managerResult = await query(
         `SELECT 
           id, 
@@ -104,11 +105,29 @@ export async function GET(request: Request) {
         );
       }
 
+      // Get manager's current department and designation
+      const departmentDesignationResult = await query(
+        `SELECT 
+          department_name, 
+          designation
+         FROM department_designation_history 
+         WHERE employee_id = $1 
+         AND is_active = true
+         ORDER BY start_date DESC
+         LIMIT 1`,
+        [tokenData.employee_id]
+      );
+
+      const department = departmentDesignationResult.rows[0]?.department_name || null;
+      const designation = departmentDesignationResult.rows[0]?.designation || null;
+
       return NextResponse.json({
         success: true,
         user: {
           ...managerResult.rows[0],
-          role: "manager"
+          role: "manager",
+          department,
+          designation
         }
       });
     }
