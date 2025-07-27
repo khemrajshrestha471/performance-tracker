@@ -145,7 +145,7 @@ export async function PATCH(
       // Check reporting manager if provided
       if (updateData.reporting_manager_id) {
         const managerCheck = await query(
-          "SELECT employee_id FROM employee_personal_details WHERE employee_id = $1 AND is_manager = true AND deleted_at IS NULL",
+          "SELECT employee_id FROM employee_personal_details WHERE employee_id = $1 AND deleted_at IS NULL",
           [updateData.reporting_manager_id]
         );
 
