@@ -213,7 +213,7 @@ export default function EmployeesPage() {
                         </div>
                       </TableCell>
                       <TableCell>{getStatusBadge(employee.status)}</TableCell>
-                      <TableCell>{new Date(employee.joinDate).toLocaleDateString()}</TableCell>
+                      <TableCell>{employee.joinDate}</TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -272,7 +272,7 @@ export default function EmployeesPage() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">
-                          Joined {new Date(employee.joinDate).toLocaleDateString()}
+                          Joined {employee.joinDate}
                         </span>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

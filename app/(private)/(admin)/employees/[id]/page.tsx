@@ -161,7 +161,7 @@ export default function EmployeeDetailPage() {
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span>Joined {new Date(employee.joinDate).toLocaleDateString()}</span>
+                  <span>Joined {employee.joinDate}</span>
                 </div>
               </CardContent>
             </Card>

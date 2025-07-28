@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useAdminUser, useAuthStore, useManagerUser } from '@/store/authStore';
-import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useAdminUser, useAuthStore, useManagerUser } from "@/store/authStore";
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 const DashboardPage = () => {
   const router = useRouter();
@@ -14,7 +14,7 @@ const DashboardPage = () => {
   useEffect(() => {
     checkAuth().then((authenticated) => {
       if (!authenticated) {
-        router.push('/login');
+        router.push("/login");
       }
     });
   }, [checkAuth, router]);
@@ -34,7 +34,7 @@ const DashboardPage = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">
-          {adminUser ? 'Admin Dashboard' : 'Manager Dashboard'}
+          {adminUser ? "Admin Dashboard" : "Manager Dashboard"}
         </h1>
       </div>
 
@@ -52,11 +52,15 @@ const DashboardPage = () => {
             </div>
             <div>
               <p>Phone Number:</p>
-              <p className="font-medium">{adminUser.phone_number || 'Not provided'}</p>
+              <p className="font-medium">
+                {adminUser.phone_number || "Not provided"}
+              </p>
             </div>
             <div>
               <p>Company Website:</p>
-              <p className="font-medium">{adminUser.company_website || 'Not provided'}</p>
+              <p className="font-medium">
+                {adminUser.company_website || "Not provided"}
+              </p>
             </div>
           </div>
         </div>
@@ -86,25 +90,34 @@ const DashboardPage = () => {
             </div>
             <div>
               <p>Phone Number:</p>
-              <p className="font-medium">{managerUser.phone_number || 'Not provided'}</p>
+              <p className="font-medium">
+                {managerUser.phone_number || "Not provided"}
+              </p>
             </div>
             <div>
               <p>Department:</p>
-              <p className="font-medium">{managerUser.department || 'Not provided'}</p>
+              <p className="font-medium">
+                {managerUser.department || "Not provided"}
+              </p>
             </div>
             <div>
               <p>Designation:</p>
-              <p className="font-medium">{managerUser.designation || 'Not provided'}</p>
+              <p className="font-medium">
+                {managerUser.designation || "Not provided"}
+              </p>
             </div>
             <div>
               <p>Date of Birth:</p>
-              <p className="font-medium">{managerUser.date_of_birth || 'Not provided'}</p>
+              <p className="font-medium">
+                {managerUser.date_of_birth || "Not provided"}
+              </p>
             </div>
             <div>
               <p>Emergency Contact:</p>
               <p className="font-medium">
-                {managerUser.emergency_contact_name || 'Not provided'}
-                {managerUser.emergency_contact_phone && ` (${managerUser.emergency_contact_phone})`}
+                {managerUser.emergency_contact_name || "Not provided"}
+                {managerUser.emergency_contact_phone &&
+                  ` (${managerUser.emergency_contact_phone})`}
               </p>
             </div>
           </div>
@@ -117,13 +130,13 @@ const DashboardPage = () => {
           <div>
             <p>Account Created:</p>
             <p className="font-medium">
-              {new Date(user?.created_at || '').toLocaleDateString()}
+              {new Date(user?.created_at || "").toLocaleDateString()}
             </p>
           </div>
           <div>
             <p>Last Updated:</p>
             <p className="font-medium">
-              {new Date(user?.updated_at || '').toLocaleDateString()}
+              {new Date(user?.updated_at || "").toLocaleDateString()}
             </p>
           </div>
           <div>

@@ -32,6 +32,7 @@ const adminMenuItems = [
     title: "Dashboard",
     url: "/dashboard",
     icon: Home,
+    exact: true,
   },
   {
     title: "Employees",
@@ -70,6 +71,7 @@ const managerMenuItems = [
     title: "Dashboard",
     url: "/dashboard",
     icon: Home,
+    exact: true,
   },
   {
     title: "Settings",
@@ -83,7 +85,6 @@ const managerMenuItems = [
   },
 ];
 
-// Define which roles can access which paths
 const rolePermissions = {
   admin: [
     "/dashboard",
@@ -102,7 +103,6 @@ export function AppSidebar() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
 
-  // Check if current path is allowed for the user's role
   useEffect(() => {
     if (!user) return;
 
@@ -129,6 +129,13 @@ export function AppSidebar() {
     }
   };
 
+  const isActive = (itemUrl: string, exact: boolean = false) => {
+    if (exact) {
+      return pathname === itemUrl;
+    }
+    return pathname === itemUrl || pathname.startsWith(`${itemUrl}/`);
+  };
+
   return (
     <Sidebar className="border-r">
       <SidebarHeader className="p-6">
@@ -138,7 +145,9 @@ export function AppSidebar() {
               <Building2 className="h-4 w-4" />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm text-muted-foreground font-semibold">PerfTrack</span>
+              <span className="text-sm font-semibold text-muted-foreground">
+                PerfTrack
+              </span>
               <span className="text-xs text-muted-foreground">
                 Tracker Tool
               </span>
@@ -152,7 +161,11 @@ export function AppSidebar() {
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={pathname === item.url}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive(item.url, item.exact)}
+                    className="data-[active=true]:bg-muted/50 data-[active=true]:dark:bg-muted/80 transition-colors"
+                  >
                     <Link href={item.url}>
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
