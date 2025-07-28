@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/authStore";
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
+import { apiAxios } from "@/lib/apiAxios";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -36,19 +37,10 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const response = await axios.post(
-        "/auth/login",
-        {
-          email,
-          password,
-        },
-        {
-          withCredentials: true,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await apiAxios.post("/auth/login", {
+        email,
+        password,
+      });
 
       const data = response.data;
 
