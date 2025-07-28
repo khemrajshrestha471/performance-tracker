@@ -69,8 +69,8 @@ export async function POST(request: Request) {
     const user = result.rows[0];
 
     // Generate tokens
-    const accessToken = generateAccessToken({ id: user.id });
-    const refreshToken = generateRefreshToken({ id: user.id });
+    const accessToken = generateAccessToken(user.id, "admin");
+    const refreshToken = generateRefreshToken(user.id, "admin");
 
     // Store refresh token in database
     await query(
