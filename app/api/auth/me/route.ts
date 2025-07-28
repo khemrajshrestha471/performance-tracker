@@ -139,7 +139,7 @@ export async function GET(request: Request) {
     );
 
   } catch (error) {
-    console.error("Error in /api/auth/me:", error);
+    console.error("Error in /auth/me:", error);
     return NextResponse.json(
       {
         success: false,

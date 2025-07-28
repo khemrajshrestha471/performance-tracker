@@ -31,7 +31,7 @@ export default function ProfileDisplay() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const { data } = await apiAxios.get("/api/auth/me");
+        const { data } = await apiAxios.get("/auth/me");
 
         if (!data.success) {
           throw new Error(data.message || "Failed to fetch profile");

@@ -43,7 +43,7 @@ export default function SignUpForm() {
       //   throw new Error(data.message);
       // }
 
-      await apiAxios.post('/api/auth/signup', formData);
+      await apiAxios.post('/auth/signup', formData);
 
       router.push('/dashboard');
     } catch (err) {

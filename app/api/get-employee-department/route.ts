@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     const { accessToken, refreshToken } = tokenResult as AuthTokens;
     let authMeResponse;
     try {
-      authMeResponse = await apiAxios.get("/api/auth/me", {
+      authMeResponse = await apiAxios.get("/auth/me", {
         headers: {
           Cookie: request.headers.get("Cookie") || "",
         },

@@ -40,7 +40,7 @@ export default function SignupPage() {
       //   throw new Error(data.message || 'Signup failed');
       // }
 
-      await apiAxios.post('/api/auth/signup', formData);
+      await apiAxios.post('/auth/signup', formData);
 
       // Redirect to dashboard or home page after successful signup
       router.push('/dashboard');

@@ -23,7 +23,7 @@ import { useAuthStore } from '@/store/authStore';
 
 export const logout = async () => {
   try {
-    await apiAxios.post('/api/auth/logout');
+    await apiAxios.post('/auth/logout');
   } catch (error) {
     console.error('Logout error:', error);
   } finally {

@@ -25,7 +25,7 @@ export default function LoginPage() {
 
     try {
       const response = await axios.post(
-        "/api/manager-login",
+        "/manager-login",
         {
           email,
           password,
