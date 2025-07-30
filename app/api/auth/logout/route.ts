@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { cookies } from 'next/headers';
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     const cookieStore = await cookies() as unknown as { get: (name: string) => { value: string } | undefined };
     const refreshToken = cookieStore.get('refreshToken')?.value;

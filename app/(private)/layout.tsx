@@ -21,6 +21,7 @@ export default async function PrivateLayout({
   try {
     verifyAccessToken(token)
   } catch (error) {
+    console.log(error)
     redirect('/login')
   }
 

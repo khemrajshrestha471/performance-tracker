@@ -8,10 +8,6 @@
 //   },
 // });
 
-
-
-
-
 import axios from "axios";
 import { useAuthStore } from "@/store/authStore";
 
@@ -26,14 +22,33 @@ export const apiAxios = axios.create({
 // --- INTERCEPTORS ---
 
 let isRefreshing = false;
-let failedQueue: any[] = [];
+// let failedQueue: any[] = [];
 
-const processQueue = (error: any, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
+// const processQueue = (error: any, token: string | null = null) => {
+//   failedQueue.forEach((prom) => {
+//     if (error) {
+//       prom.reject(error);
+//     } else {
+//       prom.resolve(token);
+//     }
+//   });
+
+//   failedQueue = [];
+// };
+
+type FailedQueueItem = {
+  resolve: (token: string | null) => void;
+  reject: (error: unknown) => void;
+};
+
+let failedQueue: FailedQueueItem[] = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach(({ resolve, reject }) => {
     if (error) {
-      prom.reject(error);
+      reject(error);
     } else {
-      prom.resolve(token);
+      resolve(token);
     }
   });
 

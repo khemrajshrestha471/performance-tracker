@@ -49,9 +49,16 @@ export async function verifyAndRefreshTokens(): Promise<
           refreshToken: refreshData.refreshToken || refreshToken,
           userId: payload.id,
         };
-      } catch (refreshError: any) {
-        // Handle 401 unauthorized error
-        if (refreshError.response?.status === 401) {
+      } catch (refreshError) {
+        if (
+          refreshError &&
+          typeof refreshError === "object" &&
+          "response" in refreshError &&
+          refreshError.response &&
+          typeof refreshError.response === "object" &&
+          "status" in refreshError.response &&
+          refreshError.response.status === 401
+        ) {
           return NextResponse.json(
             { success: false, message: "Session expired" },
             { status: 401 }

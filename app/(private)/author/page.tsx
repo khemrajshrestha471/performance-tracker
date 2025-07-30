@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 
 const DashboardPage = () => {
   const router = useRouter();
-  const { user, isAuthenticated, checkAuth, loading, logout } = useAuthStore();
+  const { user, isAuthenticated, checkAuth, loading } = useAuthStore();
   const adminUser = useAdminUser();
   const managerUser = useManagerUser();
 

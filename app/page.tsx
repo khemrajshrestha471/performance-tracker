@@ -251,7 +251,7 @@ export default function Home() {
                     </div>
                   </div>
                   <p className="text-muted-foreground">
-                    "{testimonial.content}"
+                    &quot;{testimonial.content}&quot;
                   </p>
                 </Card>
               ))}

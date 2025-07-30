@@ -4,7 +4,7 @@ import { query } from "@/lib/db";
 import { verifyAccessToken } from "@/lib/auth";
 import { TokenPayload } from "@/types/auth";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     // 1. Get token from HTTP-only cookies
     const cookieStore = await cookies();
@@ -24,6 +24,7 @@ export async function GET(request: Request) {
       tokenData = verifyAccessToken(token);
     } catch (error) {
       // Clear invalid token cookie
+      console.log(error)
       const response = NextResponse.json(
         { success: false, message: "Invalid or expired token" },
         { status: 401 }
