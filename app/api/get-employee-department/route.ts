@@ -22,10 +22,10 @@ export async function GET(request: Request) {
           Cookie: request.headers.get("Cookie") || "",
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       return NextResponse.json(
         { success: false, message: "Failed to fetch user information" },
-        { status: error.response?.status || 500 }
+        { status: typeof error === "object" && error && "response" in error && typeof (error as { response?: { status?: number } }).response?.status === "number" ? (error as { response: { status: number } }).response.status : 500 }
       );
     }
 

@@ -188,17 +188,45 @@ export async function PATCH(
 
       // 3. Handle regular field updates
       const fields: string[] = [];
-      const values: any[] = [];
       let paramIndex = 1;
+      // const values: any[] = [];
+
+      // for (const [key, value] of Object.entries(updateData)) {
+      //   if (
+      //     allowedFields.includes(key) &&
+      //     !["promote_to_manager", "password"].includes(key)
+      //   ) {
+      //     fields.push(`${key} = $${paramIndex}`);
+      //     values.push(value);
+      //     paramIndex++;
+      //   }
+      // }
+
+      type AllowedValue = string | number | boolean | null;
+
+      const values: AllowedValue[] = [];
 
       for (const [key, value] of Object.entries(updateData)) {
         if (
           allowedFields.includes(key) &&
           !["promote_to_manager", "password"].includes(key)
         ) {
-          fields.push(`${key} = $${paramIndex}`);
-          values.push(value);
-          paramIndex++;
+          // Ensure value is a valid type
+          if (
+            typeof value === "string" ||
+            typeof value === "number" ||
+            typeof value === "boolean" ||
+            value === null
+          ) {
+            fields.push(`${key} = $${paramIndex}`);
+            values.push(value); // Now safe
+            paramIndex++;
+          } else {
+            return NextResponse.json(
+              { success: false, message: `Invalid type for field: ${key}` },
+              { status: 400 }
+            );
+          }
         }
       }
 

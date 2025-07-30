@@ -15,7 +15,7 @@ export default function UnauthorizedPage() {
           Unauthorized Access
         </h1>
         <p className="max-w-md text-muted-foreground">
-          You don't have permission to view this page. Please contact your
+          You don&apos;t have permission to view this page. Please contact your
           administrator if you believe this is an error.
         </p>
       </div>
