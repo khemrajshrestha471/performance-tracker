@@ -75,10 +75,10 @@ export default function LoginPage() {
           <h3 className="text-sm font-medium mb-2">Sample Credentials</h3>
           <div className="space-y-1 text-sm">
             <p>
-              <span className="font-medium">Email:</span> krs@perftrack.com
+              <span className="font-medium">Email:</span> krs@perftracker.com
             </p>
             <p>
-              <span className="font-medium">Password:</span> skdfHJGH*&^&865
+              <span className="font-medium">Password:</span> securepassword123
             </p>
           </div>
         </div>

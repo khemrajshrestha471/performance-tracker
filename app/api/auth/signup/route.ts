@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
 import {
   hashPassword,
   generateAccessToken,
@@ -34,89 +33,177 @@ export async function POST(request: Request) {
     );
   }
 
-  try {
-    // Check if user already exists
-    const existingUser = await query("SELECT * FROM users WHERE email = $1", [
-      email,
-    ]);
+  if (process.env.RUN_FROM === "locally") {
+    // Local PostgreSQL with pg pool
+    const { query } = await import("@/lib/db");
 
-    if (existingUser.rows.length > 0) {
+    try {
+      // Check if user already exists
+      const existingUser = await query("SELECT * FROM users WHERE email = $1", [
+        email,
+      ]);
+
+      if (existingUser.rows.length > 0) {
+        return NextResponse.json(
+          { success: false, message: "User already exists" },
+          { status: 409 }
+        );
+      }
+
+      // Hash password
+      const hashedPassword = await hashPassword(password);
+
+      // Create new user
+      const result = await query(
+        `INSERT INTO users 
+         (full_name, email, password_hash, phone_number, company_website, pan_number) 
+         VALUES ($1, $2, $3, $4, $5, $6) 
+         RETURNING id, full_name, email, phone_number, company_website, pan_number, created_at, updated_at`,
+        [
+          full_name,
+          email,
+          hashedPassword,
+          phone_number || null,
+          company_website || null,
+          pan_number || null,
+        ]
+      );
+
+      const user = result.rows[0];
+
+      // Generate tokens
+      const accessToken = generateAccessToken(user.id, "admin");
+      const refreshToken = generateRefreshToken(user.id, "admin");
+
+      // Store refresh token in database
+      await query(
+        "INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, NOW() + INTERVAL '7 days')",
+        [user.id, refreshToken]
+      );
+
+      // Create response
+      const response = NextResponse.json(
+        {
+          success: true,
+          message: "User created successfully",
+          accessToken,
+          refreshToken,
+          user,
+        },
+        { status: 201 }
+      );
+
+      // Set HTTP-only cookies
+      response.cookies.set("accessToken", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        sameSite: "strict",
+        maxAge: Number(process.env.ACCESS_TOKEN_EXPIRES_IN),
+      });
+
+      response.cookies.set("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        sameSite: "strict",
+        maxAge: Number(process.env.REFRESH_TOKEN_EXPIRES_IN),
+      });
+
+      return response;
+    } catch (error) {
       return NextResponse.json(
-        { success: false, message: "User already exists" },
-        { status: 409 }
+        {
+          success: false,
+          message: "Internal server error",
+          error:
+            process.env.NODE_ENV === "development" ? error instanceof Error ? error.message : "An unknown error occurred" : undefined,
+        },
+        { status: 500 }
       );
     }
+  } else {
+    // Serverless Neon database
+    const { neon } = await import('@neondatabase/serverless');
+    const sql = neon(process.env.DATABASE_URL!);
 
-    // Hash password
-    const hashedPassword = await hashPassword(password);
+    try {
+      // Check if user already exists
+      const existingUser = await sql`SELECT * FROM users WHERE email = ${email}`;
 
-    // Create new user
-    const result = await query(
-      `INSERT INTO users 
-       (full_name, email, password_hash, phone_number, company_website, pan_number) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
-       RETURNING id, full_name, email, phone_number, company_website, pan_number, created_at, updated_at`,
-      [
-        full_name,
-        email,
-        hashedPassword,
-        phone_number || null,
-        company_website || null,
-        pan_number || null,
-      ]
-    );
+      if (existingUser.length > 0) {
+        return NextResponse.json(
+          { success: false, message: "User already exists" },
+          { status: 409 }
+        );
+      }
 
-    const user = result.rows[0];
+      // Hash password
+      const hashedPassword = await hashPassword(password);
 
-    // Generate tokens
-    const accessToken = generateAccessToken(user.id, "admin");
-    const refreshToken = generateRefreshToken(user.id, "admin");
+      // Create new user using tagged template literal
+      const user = await sql`
+        INSERT INTO users 
+        (full_name, email, password_hash, phone_number, company_website, pan_number) 
+        VALUES (${full_name}, ${email}, ${hashedPassword}, ${phone_number || null}, ${company_website || null}, ${pan_number || null})
+        RETURNING id, full_name, email, phone_number, company_website, pan_number, created_at, updated_at
+      `;
 
-    // Store refresh token in database
-    await query(
-      "INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, NOW() + INTERVAL '7 days')",
-      [user.id, refreshToken]
-    );
+      // Generate tokens
+      const accessToken = generateAccessToken(user[0].id, "admin");
+      const refreshToken = generateRefreshToken(user[0].id, "admin");
 
-    // Create response
-    const response = NextResponse.json(
-      {
-        success: true,
-        message: "User created successfully",
-        accessToken,
-        refreshToken,
-        user,
-      },
-      { status: 201 }
-    );
+      // Store refresh token in database
+      await sql`
+        INSERT INTO refresh_tokens (user_id, token, expires_at) 
+        VALUES (${user[0].id}, ${refreshToken}, NOW() + INTERVAL '7 days')
+      `;
 
-    // Set HTTP-only cookies
-    response.cookies.set("accessToken", accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      sameSite: "strict",
-      maxAge: Number(process.env.ACCESS_TOKEN_EXPIRES_IN),
-    });
+      // Create response
+      const response = NextResponse.json(
+        {
+          success: true,
+          message: "User created successfully",
+          accessToken,
+          refreshToken,
+          user: user[0],
+        },
+        { status: 201 }
+      );
 
-    response.cookies.set("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      sameSite: "strict",
-      maxAge: Number(process.env.REFRESH_TOKEN_EXPIRES_IN),
-    });
+      // Set HTTP-only cookies
+      response.cookies.set("accessToken", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        sameSite: "strict",
+        maxAge: Number(process.env.ACCESS_TOKEN_EXPIRES_IN),
+      });
 
-    return response;
-  } catch (error) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Internal server error",
-        error:
-          process.env.NODE_ENV === "development" ? error instanceof Error ? error.message : "An unknown error occurred" : undefined,
-      },
-      { status: 500 }
-    );
+      response.cookies.set("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        sameSite: "strict",
+        maxAge: Number(process.env.REFRESH_TOKEN_EXPIRES_IN),
+      });
+
+      return response;
+    } catch (error) {
+      console.error('Signup error:', error);
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Internal server error",
+          error:
+            process.env.NODE_ENV === "development" 
+              ? error instanceof Error 
+                ? error.message 
+                : "An unknown error occurred" 
+              : undefined,
+        },
+        { status: 500 }
+      );
+    }
   }
 }

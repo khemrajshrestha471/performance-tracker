@@ -1,11 +1,26 @@
-import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
-import {
-  comparePasswords,
-  generateAccessToken,
-  generateRefreshToken,
-} from "@/lib/auth";
-import { LoginData } from "@/types/auth";
+import { NextResponse } from 'next/server';
+import { comparePasswords, generateAccessToken, generateRefreshToken } from '@/lib/auth';
+import { LoginData } from '@/types/auth';
+
+async function executeQuery(queryText: string, params?: (string | number | boolean | null)[]) {
+  if (process.env.RUN_FROM === "locally") {
+    const { query } = await import("@/lib/db");
+    const result = await query(queryText, params);
+    return { rows: result.rows };
+  } else {
+    const { neon } = await import('@neondatabase/serverless');
+    const sql = neon(process.env.DATABASE_URL!);
+    
+    // Convert parameterized query to Neon's tagged template format
+    const interpolatedQuery = queryText.replace(/\$(\d+)/g, (_, index) => {
+      return params ? `\${params[${parseInt(index) - 1}]}` : '';
+    });
+    
+    // Use eval to create the tagged template (careful with security here)
+    const result = await eval(`sql\`${interpolatedQuery}\``);
+    return { rows: result };
+  }
+}
 
 export async function POST(request: Request) {
   const { email, password }: LoginData = await request.json();
@@ -19,7 +34,7 @@ export async function POST(request: Request) {
 
   try {
     // 1. First check manager credentials
-    const managerResult = await query(
+    const managerResult = await executeQuery(
       "SELECT * FROM manager_role WHERE email = $1",
       [email]
     );
@@ -45,7 +60,7 @@ export async function POST(request: Request) {
     }
 
     // 2. Get current department information
-    const departmentResult = await query(
+    const departmentResult = await executeQuery(
       `SELECT department_name 
        FROM department_designation_history 
        WHERE employee_id = $1 
@@ -55,8 +70,8 @@ export async function POST(request: Request) {
       [manager.employee_id]
     );
 
-    // 3. Get current designation information (added based on your table structure)
-    const designationResult = await query(
+    // 3. Get current designation information
+    const designationResult = await executeQuery(
       `SELECT designation
        FROM department_designation_history 
        WHERE employee_id = $1 
@@ -74,8 +89,8 @@ export async function POST(request: Request) {
       id: manager.id,
       employee_id: manager.employee_id,
       manager_id: manager.manager_id,
-      department, // Include department in token if needed
-      designation // Include designation in token if needed
+      department,
+      designation
     };
 
     // 5. Generate tokens
@@ -83,7 +98,7 @@ export async function POST(request: Request) {
     const refreshToken = generateRefreshToken(managerForToken, "manager");
 
     // 6. Store refresh token in database
-    await query(
+    await executeQuery(
       "INSERT INTO refresh_tokens (manager_id, token, expires_at) VALUES ($1, $2, NOW() + INTERVAL '7 days')",
       [manager.id, refreshToken]
     );
@@ -129,6 +144,7 @@ export async function POST(request: Request) {
       {
         success: false,
         message: "Internal server error",
+        error: process.env.NODE_ENV === "development" ? error instanceof Error ? error.message : "An unknown error occurred" : undefined
       },
       { status: 500 }
     );

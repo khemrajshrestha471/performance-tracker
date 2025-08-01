@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
 import {
   verifyAndRefreshTokens,
   setAuthCookies,
@@ -8,6 +7,60 @@ import {
 import { Department, DepartmentValues } from "@/types/enum";
 import { apiAxios } from "@/lib/apiAxios";
 
+// Type Definitions
+interface DepartmentEmployeeHistory {
+  history_id: string;
+  employee_id: string;
+  first_name: string;
+  last_name: string;
+  department_name: Department;
+  designation: string;
+  start_date: string;
+  end_date: string | null;
+  reporting_manager_id: string | null;
+  is_active: boolean;
+  salary_per_month_npr: number;
+}
+
+interface AuthMeResponse {
+  user?: {
+    department: Department;
+  };
+}
+
+interface QueryResult<T> {
+  rows: T[];
+}
+
+type QueryParam = string | number | boolean | null;
+
+interface ApiError {
+  response?: {
+    status?: number;
+  };
+}
+
+async function executeQuery<T>(
+  queryText: string,
+  params: QueryParam[] = []
+): Promise<QueryResult<T>> {
+  if (process.env.RUN_FROM === "locally") {
+    const { query } = await import("@/lib/db");
+    const result = await query(queryText, params);
+    return { rows: result.rows as T[] };
+  } else {
+    const { neon } = await import("@neondatabase/serverless");
+    const sql = neon(process.env.DATABASE_URL!);
+
+    const interpolatedQuery = queryText.replace(/\$(\d+)/g, (_, index) => {
+      return params ? `\${params[${parseInt(index) - 1}]}` : "";
+    });
+
+    const result = await eval(`sql\`${interpolatedQuery}\``);
+    return { rows: result as T[] };
+  }
+}
+
 export async function GET(request: Request) {
   try {
     // Verify tokens
@@ -15,17 +68,19 @@ export async function GET(request: Request) {
     if (tokenResult instanceof NextResponse) return tokenResult;
 
     const { accessToken, refreshToken } = tokenResult as AuthTokens;
-    let authMeResponse;
+    let authMeResponse: { data?: AuthMeResponse };
+
     try {
-      authMeResponse = await apiAxios.get("/auth/me", {
+      authMeResponse = await apiAxios.get<AuthMeResponse>("/auth/me", {
         headers: {
           Cookie: request.headers.get("Cookie") || "",
         },
       });
-    } catch (error) {
+    } catch (error: unknown) {
+      const statusCode = (error as ApiError)?.response?.status || 500;
       return NextResponse.json(
         { success: false, message: "Failed to fetch user information" },
-        { status: typeof error === "object" && error && "response" in error && typeof (error as { response?: { status?: number } }).response?.status === "number" ? (error as { response: { status: number } }).response.status : 500 }
+        { status: statusCode }
       );
     }
 
@@ -69,7 +124,7 @@ export async function GET(request: Request) {
     }
 
     // Query to get employee history for the department
-    const result = await query(
+    const result = await executeQuery<DepartmentEmployeeHistory>(
       `SELECT 
         h.history_id,
         h.employee_id,
@@ -90,31 +145,33 @@ export async function GET(request: Request) {
       [requestedDepartment]
     );
 
+    const employees = result.rows;
+
+    // Create response
     const response = NextResponse.json(
       {
         success: true,
         message: "Employee history retrieved successfully",
-        employees: result.rows,
+        employees,
       },
       { status: 200 }
     );
 
+    // If tokens were refreshed, set new cookies
     if (tokenResult.accessToken !== accessToken) {
       setAuthCookies(response, { accessToken, refreshToken });
     }
 
     return response;
-  } catch (error) {
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
     return NextResponse.json(
       {
         success: false,
         message: "Internal server error",
         error:
-          process.env.NODE_ENV === "development"
-            ? error instanceof Error
-              ? error.message
-              : "An unknown error occurred"
-            : undefined,
+          process.env.NODE_ENV === "development" ? errorMessage : undefined,
       },
       { status: 500 }
     );

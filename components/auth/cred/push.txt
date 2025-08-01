@@ -34,3 +34,22 @@ pwd:- securePassword123!
 postman:- 
 
 https://red-comet-745788.postman.co/workspace/My-Workspace~adccb3f2-d46f-438e-87ee-52f16d6e0cf9/request/45513145-1f805cca-9fc1-44c0-8635-fa0c82c8d3ad
+
+
+
+
+
+
+
+### for serverless
+
+admin login
+
+krs@perftracker.com
+securepassword123
+
+
+manager login 
+
+james.harrison84@example.com
+securePassword123!

@@ -1,70 +1,174 @@
-import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
-import {
-  verifyAndRefreshTokens,
-  setAuthCookies,
-  AuthTokens,
-} from "@/lib/authUtils";
-import { getTokenInfo } from "@/lib/tokenUtils";
+import { NextResponse } from 'next/server';
+import { verifyAndRefreshTokens, setAuthCookies, AuthTokens } from '@/lib/authUtils';
+import { getTokenInfo } from '@/lib/tokenUtils';
 
-export async function POST(request: Request) {
+// Database-related types
+type QueryParam = string | number | boolean | null;
+type QueryParams = QueryParam[];
+interface QueryObject {
+  text: string;
+  params?: QueryParams;
+}
+
+interface QueryResult<T> {
+  rows: T[];
+}
+
+// Request/response types
+interface PerformanceReviewRequest {
+  employee_id: string;
+  performance_score: number;
+  key_strengths?: string;
+  areas_for_improvement?: string;
+  goals_achieved?: string;
+  next_period_goals?: string;
+  feedback?: string;
+  promotion_eligible?: boolean;
+  bonus_awarded?: number;
+}
+
+interface EmployeeDetails {
+  employee_id: string;
+  manager_id: string;
+}
+
+interface DepartmentDetails {
+  department_name: string;
+}
+
+interface PerformanceReviewRecord {
+  employee_id: string;
+  reviewer_id: string;
+  performance_score: number;
+  key_strengths: string | null;
+  areas_for_improvement: string | null;
+  goals_achieved: string | null;
+  next_period_goals: string | null;
+  feedback: string | null;
+  promotion_eligible: boolean;
+  bonus_awarded: number | null;
+}
+
+interface SuccessResponse {
+  success: true;
+  message: string;
+  performance: PerformanceReviewRecord;
+}
+
+interface ErrorResponse {
+  success: false;
+  message: string;
+  error?: string;
+  details?: Record<string, string>;
+}
+
+type ApiResponse = SuccessResponse | ErrorResponse;
+
+// Execute a single query
+async function executeQuery<T>(queryText: string, params?: QueryParams): Promise<QueryResult<T>> {
+  if (process.env.RUN_FROM === "locally") {
+    const { query } = await import("@/lib/db");
+    const result = await query(queryText, params);
+    return { rows: result.rows as T[] };
+  } else {
+    const { neon } = await import('@neondatabase/serverless');
+    const sql = neon(process.env.DATABASE_URL!);
+    
+    const interpolatedQuery = queryText.replace(/\$(\d+)/g, (_, index) => {
+      return params ? `\${params[${parseInt(index) - 1}]}` : '';
+    });
+    
+    const result = await eval(`sql\`${interpolatedQuery}\``);
+    return { rows: result as T[] };
+  }
+}
+
+// Execute multiple queries in a transaction
+async function executeTransaction(queries: QueryObject[]): Promise<QueryResult<PerformanceReviewRecord>[]> {
+  if (process.env.RUN_FROM === "locally") {
+    const { query } = await import("@/lib/db");
+    try {
+      await query("BEGIN");
+      const results: QueryResult<PerformanceReviewRecord>[] = [];
+      for (const q of queries) {
+        const result = await query(q.text, q.params);
+        results.push({ rows: result.rows as PerformanceReviewRecord[] });
+      }
+      await query("COMMIT");
+      return results;
+    } catch (error) {
+      await query("ROLLBACK");
+      throw new Error("Transaction failed: " + (error instanceof Error ? error.message : String(error)));
+    }
+  } else {
+    try {
+      const results: QueryResult<PerformanceReviewRecord>[] = [];
+      for (const q of queries) {
+        const result = await executeQuery<PerformanceReviewRecord>(q.text, q.params);
+        results.push(result);
+      }
+      return results;
+    } catch (error) {
+      throw new Error("Transaction failed: " + (error instanceof Error ? error.message : String(error)));
+    }
+  }
+}
+
+function createErrorResponse(message: string, status: number, details?: Record<string, string>): NextResponse<ErrorResponse> {
+  const response: ErrorResponse = {
+    success: false,
+    message,
+    ...(details && { details }),
+    ...(process.env.NODE_ENV === "development" && { error: message })
+  };
+  return NextResponse.json(response, { status });
+}
+
+export async function POST(request: Request): Promise<NextResponse<ApiResponse>> {
   try {
     // Verify tokens
     const tokenResult = await verifyAndRefreshTokens();
-    if (tokenResult instanceof NextResponse) return tokenResult;
+    if (tokenResult instanceof NextResponse) {
+      return tokenResult as NextResponse<ErrorResponse>;
+    }
 
     const { accessToken, refreshToken } = tokenResult as AuthTokens;
+    const tokenInfo = getTokenInfo(accessToken);
+    const { userRole, reviewerManagerId } = tokenInfo;
 
-    const { userRole, reviewerManagerId } = getTokenInfo(accessToken);
-
-    const requestData = await request.json();
+    const requestData: PerformanceReviewRequest = await request.json();
 
     // Validate employee_id format
     if (!/^(EMP)[a-zA-Z0-9]+$/.test(requestData.employee_id)) {
-      return NextResponse.json(
-        { success: false, message: "Invalid Employee ID format" },
-        { status: 400 }
-      );
+      return createErrorResponse("Invalid Employee ID format", 400);
     }
 
     // Validate required fields
-    const requiredFields = ["employee_id", "performance_score"];
+    const requiredFields: (keyof PerformanceReviewRequest)[] = ["employee_id", "performance_score"];
     for (const field of requiredFields) {
-      if (!requestData[field]) {
-        return NextResponse.json(
-          { success: false, message: `${field} is required` },
-          { status: 400 }
-        );
+      if (requestData[field] === undefined || requestData[field] === null) {
+        return createErrorResponse(`${field} is required`, 400);
       }
     }
 
     // Only managers can create performance reviews
     if (userRole !== "manager") {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Only managers can create performance reviews",
-        },
-        { status: 403 }
-      );
+      return createErrorResponse("Only managers can create performance reviews", 403);
     }
 
     // Check if employee exists and is not deleted
-    const employeeCheck = await query(
+    const employeeCheck = await executeQuery<EmployeeDetails>(
       `SELECT employee_id, manager_id FROM employee_personal_details 
        WHERE employee_id = $1 AND deleted_at IS NULL`,
       [requestData.employee_id]
     );
 
     if (employeeCheck.rows.length === 0) {
-      return NextResponse.json(
-        { success: false, message: "Employee not found or is inactive" },
-        { status: 404 }
-      );
+      return createErrorResponse("Employee not found or is inactive", 404);
     }
 
     // Get department for the employee being reviewed
-    const employeeDept = await query(
+    const employeeDept = await executeQuery<DepartmentDetails>(
       `SELECT department_name 
        FROM department_designation_history 
        WHERE employee_id = $1 AND is_active = true
@@ -73,14 +177,11 @@ export async function POST(request: Request) {
     );
 
     if (employeeDept.rows.length === 0) {
-      return NextResponse.json(
-        { success: false, message: "Employee department not found" },
-        { status: 404 }
-      );
+      return createErrorResponse("Employee department not found", 404);
     }
 
-    // Get department for the manager (using manager_id from token)
-    const managerDept = await query(
+    // Get department for the manager
+    const managerDept = await executeQuery<DepartmentDetails>(
       `SELECT d.department_name
        FROM department_designation_history d
        JOIN employee_personal_details e ON d.employee_id = e.employee_id
@@ -90,109 +191,75 @@ export async function POST(request: Request) {
     );
 
     if (managerDept.rows.length === 0) {
-      return NextResponse.json(
-        { success: false, message: "Manager department not found" },
-        { status: 404 }
-      );
+      return createErrorResponse("Manager department not found", 404);
     }
 
     // Check if departments match
-    if (
-      employeeDept.rows[0].department_name !==
-      managerDept.rows[0].department_name
-    ) {
-      return NextResponse.json(
+    if (employeeDept.rows[0].department_name !== managerDept.rows[0].department_name) {
+      return createErrorResponse(
+        "Department mismatch - you can only review employees in your department",
+        403,
         {
-          success: false,
-          message:
-            "Department mismatch - you can only review employees in your department",
-          details: {
-            employeeDepartment: employeeDept.rows[0].department_name,
-            managerDepartment: managerDept.rows[0].department_name,
-          },
-        },
-        { status: 403 }
+          employeeDepartment: employeeDept.rows[0].department_name,
+          managerDepartment: managerDept.rows[0].department_name
+        }
       );
     }
 
     // Validate performance score range
-    if (
-      requestData.performance_score < 0 ||
-      requestData.performance_score > 100
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Performance score must be between 0 and 100",
-        },
-        { status: 400 }
-      );
+    if (requestData.performance_score < 0 || requestData.performance_score > 100) {
+      return createErrorResponse("Performance score must be between 0 and 100", 400);
     }
 
     // Validate bonus_awarded if provided
-    if (
-      requestData.bonus_awarded &&
-      (isNaN(requestData.bonus_awarded) || requestData.bonus_awarded < 0)
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Bonus amount must be a positive number",
-        },
-        { status: 400 }
-      );
+    if (requestData.bonus_awarded !== undefined && 
+        (isNaN(requestData.bonus_awarded) || requestData.bonus_awarded < 0)) {
+      return createErrorResponse("Bonus amount must be a positive number", 400);
     }
 
-    // Start a transaction
-    await query("BEGIN");
+    // Prepare transaction queries
+    const transactionQueries: QueryObject[] = [
+      {
+        text: `INSERT INTO performance_history (
+          employee_id, reviewer_id, performance_score,
+          key_strengths, areas_for_improvement, goals_achieved,
+          next_period_goals, feedback, promotion_eligible, bonus_awarded
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        RETURNING *`,
+        params: [
+          requestData.employee_id,
+          reviewerManagerId,
+          requestData.performance_score,
+          requestData.key_strengths ?? null,
+          requestData.areas_for_improvement ?? null,
+          requestData.goals_achieved ?? null,
+          requestData.next_period_goals ?? null,
+          requestData.feedback ?? null,
+          requestData.promotion_eligible ?? false,
+          requestData.bonus_awarded ?? null,
+        ]
+      }
+    ];
 
-    // Insert new performance record
-    const result = await query(
-      `INSERT INTO performance_history (
-        employee_id,
-        reviewer_id,
-        performance_score,
-        key_strengths,
-        areas_for_improvement,
-        goals_achieved,
-        next_period_goals,
-        feedback,
-        promotion_eligible,
-        bonus_awarded
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      RETURNING *`,
-      [
-        requestData.employee_id,
-        reviewerManagerId,
-        requestData.performance_score,
-        requestData.key_strengths || null,
-        requestData.areas_for_improvement || null,
-        requestData.goals_achieved || null,
-        requestData.next_period_goals || null,
-        requestData.feedback || null,
-        requestData.promotion_eligible || false,
-        requestData.bonus_awarded || null,
-      ]
-    );
-
-    // If bonus is awarded, update the employee's salary
+    // If bonus is awarded, add the update query to the transaction
     if (requestData.bonus_awarded) {
-      await query(
-        `UPDATE department_designation_history
-         SET salary_per_month_npr = salary_per_month_npr + $1
-         WHERE employee_id = $2 AND is_active = true`,
-        [requestData.bonus_awarded, requestData.employee_id]
-      );
+      transactionQueries.push({
+        text: `UPDATE department_designation_history
+               SET salary_per_month_npr = salary_per_month_npr + $1
+               WHERE employee_id = $2 AND is_active = true`,
+        params: [requestData.bonus_awarded, requestData.employee_id]
+      });
     }
 
-    // Commit the transaction
-    await query("COMMIT");
+    // Execute the transaction
+    const results = await executeTransaction(transactionQueries);
+    const performanceResult = results[0].rows[0];
 
-    const response = NextResponse.json(
+    const response = NextResponse.json<SuccessResponse>(
       {
         success: true,
         message: "Performance review created successfully",
-        performance: result.rows[0],
+        performance: performanceResult,
       },
       { status: 201 }
     );
@@ -202,32 +269,9 @@ export async function POST(request: Request) {
     }
 
     return response;
+
   } catch (error) {
-    // Rollback the transaction in case of error
-    await query("ROLLBACK");
-
-    let errorMessage = "Internal server error";
-    if (error instanceof Error) {
-      if (error.message.includes("foreign key constraint")) {
-        errorMessage =
-          "Invalid employee or reviewer reference. Please check the IDs.";
-      } else {
-        errorMessage = error.message;
-      }
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: errorMessage,
-        error:
-          process.env.NODE_ENV === "development"
-            ? error instanceof Error
-              ? error.message
-              : "An unknown error occurred"
-            : undefined,
-      },
-      { status: 500 }
-    );
+    const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
+    return createErrorResponse(errorMessage, 500);
   }
 }

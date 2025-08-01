@@ -1,10 +1,59 @@
 import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
 import {
   verifyAndRefreshTokens,
   setAuthCookies,
   AuthTokens,
 } from "@/lib/authUtils";
+
+// Define types for our data
+type QueryResult = {
+  rows: Array<Record<string, unknown>>;
+};
+
+type EmployeeHistoryRecord = {
+  history_id: string;
+  employee_id: string;
+  department_name: string;
+  designation: string;
+  start_date: string;
+  end_date: string | null;
+  reporting_manager_id: string | null;
+  is_active: boolean;
+  salary_per_month_npr: number | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
+type EmployeeCheckResult = {
+  employee_id: string;
+};
+
+type HistoryCheckResult = {
+  history_id: string;
+};
+
+async function executeQuery(
+  queryText: string,
+  params?: (string | number | boolean | null)[]
+): Promise<QueryResult> {
+  if (process.env.RUN_FROM === "locally") {
+    const { query } = await import("@/lib/db");
+    const result = await query(queryText, params);
+    return { rows: result.rows };
+  } else {
+    const { neon } = await import("@neondatabase/serverless");
+    const sql = neon(process.env.DATABASE_URL!);
+
+    // Convert parameterized query to Neon's tagged template format
+    const interpolatedQuery = queryText.replace(/\$(\d+)/g, (_, index) => {
+      return params ? `\${params[${parseInt(index) - 1}]}` : "";
+    });
+
+    // Use eval to create the tagged template (careful with security here)
+    const result = await eval(`sql\`${interpolatedQuery}\``);
+    return { rows: result };
+  }
+}
 
 export async function GET(
   request: Request,
@@ -26,7 +75,7 @@ export async function GET(
     }
 
     // Check if employee exists
-    const employeeCheck = await query(
+    const employeeCheck = await executeQuery(
       "SELECT employee_id FROM employee_personal_details WHERE employee_id = $1 AND deleted_at IS NULL",
       [employeeId]
     );
@@ -39,7 +88,7 @@ export async function GET(
     }
 
     // Get all history records for employee
-    const result = await query(
+    const result = await executeQuery(
       `SELECT 
         history_id,
         employee_id,
@@ -59,7 +108,7 @@ export async function GET(
 
     const response = NextResponse.json({
       success: true,
-      history: result.rows,
+      history: result.rows as EmployeeHistoryRecord[],
     });
 
     if (tokenResult.accessToken !== accessToken) {
@@ -73,7 +122,11 @@ export async function GET(
         success: false,
         message: "Internal server error",
         error:
-          process.env.NODE_ENV === "development" ? error instanceof Error ? error.message : "An unknown error occurred" : undefined,
+          process.env.NODE_ENV === "development"
+            ? error instanceof Error
+              ? error.message
+              : "An unknown error occurred"
+            : undefined,
       },
       { status: 500 }
     );
@@ -91,7 +144,7 @@ export async function PATCH(
 
     const { accessToken, refreshToken } = tokenResult as AuthTokens;
     const employeeId = params.id;
-    const updateData = await request.json();
+    const updateData = (await request.json()) as Partial<EmployeeHistoryRecord>;
 
     if (!/^(EMP|MNG)[a-zA-Z0-9]+$/.test(employeeId)) {
       return NextResponse.json(
@@ -112,7 +165,7 @@ export async function PATCH(
     ];
 
     // Check if employee exists
-    const employeeCheck = await query(
+    const employeeCheck = await executeQuery(
       "SELECT employee_id FROM employee_personal_details WHERE employee_id = $1 AND deleted_at IS NULL",
       [employeeId]
     );
@@ -127,7 +180,7 @@ export async function PATCH(
     // If history_id is provided, update specific record
     if (updateData.history_id) {
       // Check if history record exists and belongs to this employee
-      const checkHistory = await query(
+      const checkHistory = await executeQuery(
         "SELECT history_id FROM department_designation_history WHERE history_id = $1 AND employee_id = $2",
         [updateData.history_id, employeeId]
       );
@@ -144,7 +197,7 @@ export async function PATCH(
 
       // Check reporting manager if provided
       if (updateData.reporting_manager_id) {
-        const managerCheck = await query(
+        const managerCheck = await executeQuery(
           "SELECT employee_id FROM employee_personal_details WHERE employee_id = $1 AND deleted_at IS NULL",
           [updateData.reporting_manager_id]
         );
@@ -161,14 +214,14 @@ export async function PATCH(
       }
 
       // Prepare dynamic update query for specific record
-      const fields = [];
-      const values = [];
+      const fields: string[] = [];
+      const values: (string | number | boolean | null)[] = [];
       let paramIndex = 1;
 
       for (const [key, value] of Object.entries(updateData)) {
         if (allowedFields.includes(key) && key !== "history_id") {
           fields.push(`${key} = $${paramIndex}`);
-          values.push(value);
+          values.push(value as string | number | boolean | null);
           paramIndex++;
         }
       }
@@ -190,12 +243,12 @@ export async function PATCH(
         RETURNING *
       `;
 
-      const result = await query(updateQuery, values);
+      const result = await executeQuery(updateQuery, values);
 
       const response = NextResponse.json({
         success: true,
         message: "Employee history record updated successfully",
-        history: result.rows[0],
+        history: result.rows[0] as EmployeeHistoryRecord,
       });
 
       if (tokenResult.accessToken !== accessToken) {
@@ -207,7 +260,7 @@ export async function PATCH(
     // If no history_id provided, update the current active record
     else {
       // Get current active record
-      const currentRecord = await query(
+      const currentRecord = await executeQuery(
         "SELECT history_id FROM department_designation_history WHERE employee_id = $1 AND is_active = true",
         [employeeId]
       );
@@ -222,17 +275,17 @@ export async function PATCH(
         );
       }
 
-      const historyId = currentRecord.rows[0].history_id;
+      const historyId = currentRecord.rows[0].history_id as string;
 
       // Prepare dynamic update query for current record
-      const fields = [];
-      const values = [];
+      const fields: string[] = [];
+      const values: (string | number | boolean | null)[] = [];
       let paramIndex = 1;
 
       for (const [key, value] of Object.entries(updateData)) {
         if (allowedFields.includes(key)) {
           fields.push(`${key} = $${paramIndex}`);
-          values.push(value);
+          values.push(value as string | number | boolean | null);
           paramIndex++;
         }
       }
@@ -254,12 +307,12 @@ export async function PATCH(
         RETURNING *
       `;
 
-      const result = await query(updateQuery, values);
+      const result = await executeQuery(updateQuery, values);
 
       const response = NextResponse.json({
         success: true,
         message: "Current employee history record updated successfully",
-        history: result.rows[0],
+        history: result.rows[0] as EmployeeHistoryRecord,
       });
 
       if (tokenResult.accessToken !== accessToken) {
@@ -274,7 +327,11 @@ export async function PATCH(
         success: false,
         message: "Internal server error",
         error:
-          process.env.NODE_ENV === "development" ? error instanceof Error ? error.message : "An unknown error occurred" : undefined,
+          process.env.NODE_ENV === "development"
+            ? error instanceof Error
+              ? error.message
+              : "An unknown error occurred"
+            : undefined,
       },
       { status: 500 }
     );
@@ -301,7 +358,7 @@ export async function DELETE(
     }
 
     // Check if employee exists
-    const employeeCheck = await query(
+    const employeeCheck = await executeQuery(
       "SELECT employee_id FROM employee_personal_details WHERE employee_id = $1 AND deleted_at IS NULL",
       [employeeId]
     );
@@ -314,7 +371,7 @@ export async function DELETE(
     }
 
     // First get all history records that will be deleted (for the response)
-    const recordsToDelete = await query(
+    const recordsToDelete = await executeQuery(
       "SELECT history_id FROM department_designation_history WHERE employee_id = $1",
       [employeeId]
     );
@@ -330,7 +387,7 @@ export async function DELETE(
     }
 
     // Delete all history records for this employee
-    const result = await query(
+    const result = await executeQuery(
       "DELETE FROM department_designation_history WHERE employee_id = $1 RETURNING history_id, employee_id",
       [employeeId]
     );
@@ -338,7 +395,10 @@ export async function DELETE(
     const response = NextResponse.json({
       success: true,
       message: `Deleted ${result.rows.length} history records for employee ${employeeId}`,
-      deletedRecords: result.rows,
+      deletedRecords: result.rows as Array<{
+        history_id: string;
+        employee_id: string;
+      }>,
     });
 
     if (tokenResult.accessToken !== accessToken) {
@@ -353,7 +413,11 @@ export async function DELETE(
         success: false,
         message: "Internal server error",
         error:
-          process.env.NODE_ENV === "development" ? error instanceof Error ? error.message : "An unknown error occurred" : undefined,
+          process.env.NODE_ENV === "development"
+            ? error instanceof Error
+              ? error.message
+              : "An unknown error occurred"
+            : undefined,
       },
       { status: 500 }
     );
