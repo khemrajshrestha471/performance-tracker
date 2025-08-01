@@ -1,0 +1,27 @@
+git push git@github.com-personal:khemrajshrestha471/performance-tracker
+
+
+
+host:- localhost
+port:- 5432
+Database:- postgres
+username:- postgres
+password:- fhHGKHJ685##h
+
+
+pending
+
+Access and Refresh token concept
+
+Admin
+
+rajan@gmail.com
+skdfHJGH*&^&865
+
+AI manager
+james.anderson42@example.com
+
+Software manager
+james.anderson2@example.com
+
+pwd:- securePassword123!
