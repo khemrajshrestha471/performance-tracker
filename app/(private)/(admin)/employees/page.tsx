@@ -381,18 +381,21 @@ export default function EmployeesPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem asChild>
+                              <DropdownMenuItem>
                                 <Link
                                   href={`/employees/${employee.personal_details.employee_id}`}
                                 >
                                   View Details
                                 </Link>
                               </DropdownMenuItem>
-                              <DropdownMenuItem>Edit Employee</DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Link
+                                  href={`/employees/${employee.personal_details.employee_id}/edit`}
+                                >
+                                Edit Employee
+                                </Link>
+                                </DropdownMenuItem>
                               <DropdownMenuItem>Assign Review</DropdownMenuItem>
-                              <DropdownMenuItem className="text-red-600">
-                                Deactivate
-                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>

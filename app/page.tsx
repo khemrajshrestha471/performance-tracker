@@ -13,6 +13,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function Home() {
   const features = [
@@ -67,6 +68,7 @@ export default function Home() {
             <span className="text-lg font-semibold">PerfTrack</span>
           </div>
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <Button asChild variant="outline">
               <Link href="/login">Login</Link>
             </Button>
