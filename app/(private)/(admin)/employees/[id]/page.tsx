@@ -695,7 +695,8 @@ export default function EmployeeDetailPage() {
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteEmployee}
-              disabled={isDeleting}
+              // disabled={isDeleting}
+              disabled
               className="bg-red-500 hover:bg-red-600 text-white"
             >
               {isDeleting ? (

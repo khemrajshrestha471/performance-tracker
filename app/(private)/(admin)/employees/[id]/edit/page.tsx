@@ -181,7 +181,7 @@ export default function EditEmployeePage() {
         <h1 className="text-2xl font-bold">Edit Employee</h1>
         <Button
           variant="outline"
-          onClick={() => router.push(`/employee/${id}`)}
+          onClick={() => router.push(`/employees/${id}`)}
         >
           Cancel
         </Button>
@@ -448,12 +448,16 @@ export default function EditEmployeePage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.push(`/employee/${id}`)}
+              onClick={() => router.push(`/employees/${id}`)}
               disabled={submitting}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={submitting}>
+            <Button
+              type="submit"
+              // disabled={submitting}
+              disabled
+            >
               {submitting ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />

@@ -71,6 +71,17 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center">
       <div className="p-8 rounded-lg shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold mb-6 text-center">Admin Login</h1>
+        <div className="mb-6 p-4 border rounded-lg text-center">
+          <h3 className="text-sm font-medium mb-2">Sample Credentials</h3>
+          <div className="space-y-1 text-sm">
+            <p>
+              <span className="font-medium">Email:</span> krs@perftrack.com
+            </p>
+            <p>
+              <span className="font-medium">Password:</span> skdfHJGH*&^&865
+            </p>
+          </div>
+        </div>
         {error && (
           <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded">
             {error}

@@ -259,10 +259,12 @@ export default function EmployeesPage() {
             Manage your team members and their information
           </p>
         </div>
+        <Link href="/employees/add-employee">
         <Button className="shrink-0">
           <Plus className="mr-2 h-4 w-4" />
           Add Employee
         </Button>
+        </Link>
       </div>
 
       <Card>

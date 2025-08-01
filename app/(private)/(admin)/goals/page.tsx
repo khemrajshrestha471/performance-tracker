@@ -1,14 +1,33 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Progress } from "@/components/ui/progress"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Plus, Target, Calendar, CheckCircle, Clock } from "lucide-react"
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Search,
+  Plus,
+  Target,
+  Calendar,
+  CheckCircle,
+  Clock,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,137 +35,255 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { apiAxios } from "@/lib/apiAxios";
+import { toast } from "sonner";
 
-// Mock data
-const goals = [
-  {
-    id: 1,
-    title: "Complete React Native certification",
-    description: "Obtain certification in React Native development to enhance mobile development skills",
-    employee: {
-      name: "Sarah Johnson",
-      avatar: "/placeholder.svg?height=40&width=40",
-      department: "Engineering",
-    },
-    assignedBy: "John Smith",
-    progress: 75,
-    deadline: "2024-08-15",
-    status: "In Progress",
-    priority: "High",
-    createdDate: "2024-05-01",
-  },
-  {
-    id: 2,
-    title: "Lead team project migration",
-    description: "Successfully migrate legacy system to new architecture",
-    employee: {
-      name: "Sarah Johnson",
-      avatar: "/placeholder.svg?height=40&width=40",
-      department: "Engineering",
-    },
-    assignedBy: "John Smith",
-    progress: 100,
-    deadline: "2024-06-30",
-    status: "Completed",
-    priority: "High",
-    createdDate: "2024-04-15",
-  },
-  {
-    id: 3,
-    title: "Increase sales by 20%",
-    description: "Achieve 20% increase in quarterly sales compared to previous quarter",
-    employee: {
-      name: "Mike Chen",
-      avatar: "/placeholder.svg?height=40&width=40",
-      department: "Sales",
-    },
-    assignedBy: "Lisa Anderson",
-    progress: 60,
-    deadline: "2024-09-30",
-    status: "In Progress",
-    priority: "High",
-    createdDate: "2024-06-01",
-  },
-  {
-    id: 4,
-    title: "Mentor 2 junior developers",
-    description: "Provide guidance and support to junior team members",
-    employee: {
-      name: "David Wilson",
-      avatar: "/placeholder.svg?height=40&width=40",
-      department: "Engineering",
-    },
-    assignedBy: "John Smith",
-    progress: 40,
-    deadline: "2024-12-31",
-    status: "In Progress",
-    priority: "Medium",
-    createdDate: "2024-06-10",
-  },
-  {
-    id: 5,
-    title: "Launch marketing campaign",
-    description: "Design and execute comprehensive marketing campaign for new product",
-    employee: {
-      name: "Emily Davis",
-      avatar: "/placeholder.svg?height=40&width=40",
-      department: "Marketing",
-    },
-    assignedBy: "David Wilson",
-    progress: 0,
-    deadline: "2024-07-31",
-    status: "Not Started",
-    priority: "Medium",
-    createdDate: "2024-06-20",
-  },
-]
+interface Employee {
+  id: number;
+  employee_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number: string;
+  date_of_birth: string;
+  created_at: string;
+}
+
+interface Goal {
+  id: number;
+  title: string;
+  description: string;
+  employee: {
+    name: string;
+    avatar: string;
+    department: string;
+  };
+  assignedBy: string;
+  progress: number;
+  deadline: string;
+  status: string;
+  priority: string;
+  createdDate: string;
+}
 
 export default function GoalsPage() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [priorityFilter, setPriorityFilter] = useState("all")
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loadingEmployees, setLoadingEmployees] = useState(true);
+  const [newGoal, setNewGoal] = useState({
+    employeeId: "",
+    title: "",
+    description: "",
+    deadline: "",
+    priority: "Medium",
+  });
+
+  // Mock data - in a real app, you would fetch this from an API
+  const [goals, setGoals] = useState<Goal[]>([
+    {
+      id: 1,
+      title: "Complete React Native certification",
+      description:
+        "Obtain certification in React Native development to enhance mobile development skills",
+      employee: {
+        name: "Sarah Johnson",
+        avatar: "/placeholder.svg?height=40&width=40",
+        department: "Engineering",
+      },
+      assignedBy: "John Smith",
+      progress: 75,
+      deadline: "2024-08-15",
+      status: "In Progress",
+      priority: "High",
+      createdDate: "2024-05-01",
+    },
+    {
+      id: 2,
+      title: "Lead team project migration",
+      description: "Successfully migrate legacy system to new architecture",
+      employee: {
+        name: "Sarah Johnson",
+        avatar: "/placeholder.svg?height=40&width=40",
+        department: "Engineering",
+      },
+      assignedBy: "John Smith",
+      progress: 100,
+      deadline: "2024-06-30",
+      status: "Completed",
+      priority: "High",
+      createdDate: "2024-04-15",
+    },
+    {
+      id: 3,
+      title: "Increase sales by 20%",
+      description:
+        "Achieve 20% increase in quarterly sales compared to previous quarter",
+      employee: {
+        name: "Mike Chen",
+        avatar: "/placeholder.svg?height=40&width=40",
+        department: "Sales",
+      },
+      assignedBy: "Lisa Anderson",
+      progress: 60,
+      deadline: "2024-09-30",
+      status: "In Progress",
+      priority: "High",
+      createdDate: "2024-06-01",
+    },
+    {
+      id: 4,
+      title: "Mentor 2 junior developers",
+      description: "Provide guidance and support to junior team members",
+      employee: {
+        name: "David Wilson",
+        avatar: "/placeholder.svg?height=40&width=40",
+        department: "Engineering",
+      },
+      assignedBy: "John Smith",
+      progress: 40,
+      deadline: "2024-12-31",
+      status: "In Progress",
+      priority: "Medium",
+      createdDate: "2024-06-10",
+    },
+    {
+      id: 5,
+      title: "Launch marketing campaign",
+      description:
+        "Design and execute comprehensive marketing campaign for new product",
+      employee: {
+        name: "Emily Davis",
+        avatar: "/placeholder.svg?height=40&width=40",
+        department: "Marketing",
+      },
+      assignedBy: "David Wilson",
+      progress: 0,
+      deadline: "2024-07-31",
+      status: "Not Started",
+      priority: "Medium",
+      createdDate: "2024-06-20",
+    },
+  ]);
+
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const response = await apiAxios.get("/get-all-employee");
+        if (response.data.success) {
+          setEmployees(response.data.data.employees);
+        } else {
+          throw new Error(response.data.message || "Failed to fetch employees");
+        }
+      } catch (error) {
+        toast.error("Failed to load employees");
+        console.error("Error fetching employees:", error);
+      } finally {
+        setLoadingEmployees(false);
+      }
+    };
+
+    fetchEmployees();
+  }, []);
 
   const filteredGoals = goals.filter((goal) => {
     const matchesSearch =
       goal.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      goal.employee.name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === "all" || goal.status === statusFilter
-    const matchesPriority = priorityFilter === "all" || goal.priority === priorityFilter
-    return matchesSearch && matchesStatus && matchesPriority
-  })
+      goal.employee.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || goal.status === statusFilter;
+    const matchesPriority =
+      priorityFilter === "all" || goal.priority === priorityFilter;
+    return matchesSearch && matchesStatus && matchesPriority;
+  });
 
   const getStatusBadge = (status: string) => {
-    if (status === "Completed") return <Badge className="bg-green-100 text-green-800">Completed</Badge>
-    if (status === "In Progress") return <Badge className="bg-blue-100 text-blue-800">In Progress</Badge>
-    return <Badge className="bg-gray-100 text-gray-800">Not Started</Badge>
-  }
+    if (status === "Completed")
+      return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
+    if (status === "In Progress")
+      return <Badge className="bg-blue-100 text-blue-800">In Progress</Badge>;
+    return <Badge className="bg-gray-100 text-gray-800">Not Started</Badge>;
+  };
 
   const getPriorityBadge = (priority: string) => {
-    if (priority === "High") return <Badge variant="destructive">High</Badge>
-    if (priority === "Medium") return <Badge className="bg-yellow-100 text-yellow-800">Medium</Badge>
-    return <Badge variant="secondary">Low</Badge>
-  }
+    if (priority === "High") return <Badge variant="destructive">High</Badge>;
+    if (priority === "Medium")
+      return <Badge className="bg-yellow-100 text-yellow-800">Medium</Badge>;
+    return <Badge variant="secondary">Low</Badge>;
+  };
 
   const getStatusIcon = (status: string) => {
-    if (status === "Completed") return <CheckCircle className="h-4 w-4 text-green-600" />
-    if (status === "In Progress") return <Clock className="h-4 w-4 text-blue-600" />
-    return <Target className="h-4 w-4 text-gray-600" />
-  }
+    if (status === "Completed")
+      return <CheckCircle className="h-4 w-4 text-green-600" />;
+    if (status === "In Progress")
+      return <Clock className="h-4 w-4 text-blue-600" />;
+    return <Target className="h-4 w-4 text-gray-600" />;
+  };
 
   const isOverdue = (deadline: string, status: string) => {
-    return new Date(deadline) < new Date() && status !== "Completed"
-  }
+    return new Date(deadline) < new Date() && status !== "Completed";
+  };
+
+  const handleCreateGoal = () => {
+    try {
+      const selectedEmployee = employees.find(
+        (emp) => emp.id.toString() === newGoal.employeeId
+      );
+
+      if (!selectedEmployee) {
+        throw new Error("Employee not found");
+      }
+
+      const newGoalEntry: Goal = {
+        id: goals.length + 1,
+        title: newGoal.title,
+        description: newGoal.description,
+        employee: {
+          name: `${selectedEmployee.first_name} ${selectedEmployee.last_name}`,
+          avatar: "/placeholder.svg?height=40&width=40",
+          department: "Unknown", // You might want to get this from the employee data
+        },
+        assignedBy: "Current User", // Replace with actual assigner
+        progress: 0,
+        deadline: newGoal.deadline,
+        status: "Not Started",
+        priority: newGoal.priority,
+        createdDate: new Date().toISOString().split("T")[0],
+      };
+
+      setGoals([...goals, newGoalEntry]);
+      setIsCreateDialogOpen(false);
+      toast.success("Goal created successfully");
+
+      // Reset form
+      setNewGoal({
+        employeeId: "",
+        title: "",
+        description: "",
+        deadline: "",
+        priority: "Medium",
+      });
+    } catch (error) {
+      toast.error("Failed to create goal");
+      console.error("Error creating goal:", error);
+    }
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6 w-full overflow-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Goals & Objectives</h1>
-          <p className="text-muted-foreground text-sm sm:text-base">Track and manage employee goals and objectives</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Goals & Objectives
+          </h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            Track and manage employee goals and objectives
+          </p>
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
@@ -158,55 +295,105 @@ export default function GoalsPage() {
           <DialogContent className="max-w-2xl mx-4">
             <DialogHeader>
               <DialogTitle>Create New Goal</DialogTitle>
-              <DialogDescription>Set a new goal or objective for an employee</DialogDescription>
+              <DialogDescription>
+                Set a new goal or objective for an employee
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Employee</Label>
-                  <Select>
+                  <Select
+                    value={newGoal.employeeId}
+                    onValueChange={(value) =>
+                      setNewGoal({ ...newGoal, employeeId: value })
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select employee" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="sarah">Sarah Johnson</SelectItem>
-                      <SelectItem value="mike">Mike Chen</SelectItem>
-                      <SelectItem value="emily">Emily Davis</SelectItem>
-                      <SelectItem value="david">David Wilson</SelectItem>
+                      {loadingEmployees ? (
+                        <SelectItem value="" disabled>
+                          Loading employees...
+                        </SelectItem>
+                      ) : (
+                        employees.map((employee) => (
+                          <SelectItem
+                            key={employee.id}
+                            value={employee.id.toString()}
+                          >
+                            {employee.first_name} {employee.last_name}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>Priority</Label>
-                  <Select>
+                  <Select
+                    value={newGoal.priority}
+                    onValueChange={(value) =>
+                      setNewGoal({ ...newGoal, priority: value })
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select priority" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="High">High</SelectItem>
+                      <SelectItem value="Medium">Medium</SelectItem>
+                      <SelectItem value="Low">Low</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Goal Title</Label>
-                <Input placeholder="Enter goal title" />
+                <Input
+                  placeholder="Enter goal title"
+                  value={newGoal.title}
+                  onChange={(e) =>
+                    setNewGoal({ ...newGoal, title: e.target.value })
+                  }
+                />
               </div>
               <div className="space-y-2">
                 <Label>Description</Label>
-                <Textarea placeholder="Describe the goal in detail..." />
+                <Textarea
+                  placeholder="Describe the goal in detail..."
+                  value={newGoal.description}
+                  onChange={(e) =>
+                    setNewGoal({ ...newGoal, description: e.target.value })
+                  }
+                />
               </div>
               <div className="space-y-2">
                 <Label>Deadline</Label>
-                <Input type="date" />
+                <Input
+                  type="date"
+                  value={newGoal.deadline}
+                  onChange={(e) =>
+                    setNewGoal({ ...newGoal, deadline: e.target.value })
+                  }
+                />
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsCreateDialogOpen(false)}
+                  className="cursor-pointer"
+                >
                   Cancel
                 </Button>
-                <Button onClick={() => setIsCreateDialogOpen(false)}>Create Goal</Button>
+                <Button
+                  onClick={handleCreateGoal}
+                  className="cursor-pointer"
+                  disabled
+                >
+                  Create Goal
+                </Button>
               </div>
             </div>
           </DialogContent>
@@ -216,7 +403,9 @@ export default function GoalsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg sm:text-xl">Goal Management</CardTitle>
-          <CardDescription className="text-sm">Monitor progress and manage all employee goals</CardDescription>
+          <CardDescription className="text-sm">
+            Monitor progress and manage all employee goals
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {/* Filters */}
@@ -259,21 +448,33 @@ export default function GoalsPage() {
           {/* Goals Grid */}
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
             {filteredGoals.map((goal) => (
-              <Card key={goal.id} className={`${isOverdue(goal.deadline, goal.status) ? "border-red-200" : ""}`}>
+              <Card
+                key={goal.id}
+                className={`${
+                  isOverdue(goal.deadline, goal.status) ? "border-red-200" : ""
+                }`}
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0 flex-1">
                       {getStatusIcon(goal.status)}
-                      <CardTitle className="text-base sm:text-lg truncate">{goal.title}</CardTitle>
+                      <CardTitle className="text-base sm:text-lg truncate">
+                        {goal.title}
+                      </CardTitle>
                     </div>
                     {getPriorityBadge(goal.priority)}
                   </div>
-                  <CardDescription className="text-sm line-clamp-2">{goal.description}</CardDescription>
+                  <CardDescription className="text-sm line-clamp-2">
+                    {goal.description}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8 shrink-0">
-                      <AvatarImage src={goal.employee.avatar || "/placeholder.svg"} alt={goal.employee.name} />
+                      <AvatarImage
+                        src={goal.employee.avatar || "/placeholder.svg"}
+                        alt={goal.employee.name}
+                      />
                       <AvatarFallback className="text-xs">
                         {goal.employee.name
                           .split(" ")
@@ -282,8 +483,12 @@ export default function GoalsPage() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{goal.employee.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{goal.employee.department}</p>
+                      <p className="text-sm font-medium truncate">
+                        {goal.employee.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {goal.employee.department}
+                      </p>
                     </div>
                   </div>
 
@@ -299,17 +504,22 @@ export default function GoalsPage() {
                     <div className="flex items-center gap-1 min-w-0 flex-1">
                       <Calendar className="h-3 w-3 text-muted-foreground shrink-0" />
                       <span
-                        className={`truncate ${isOverdue(goal.deadline, goal.status) ? "text-red-600" : "text-muted-foreground"}`}
+                        className={`truncate ${
+                          isOverdue(goal.deadline, goal.status)
+                            ? "text-red-600"
+                            : "text-muted-foreground"
+                        }`}
                       >
-                        {/* {new Date(goal.deadline).toLocaleDateString()} */}
-                        {new Date(goal.deadline).toISOString().split('T')[0]}
+                        {new Date(goal.deadline).toISOString().split("T")[0]}
                       </span>
                     </div>
                     {getStatusBadge(goal.status)}
                   </div>
 
                   {isOverdue(goal.deadline, goal.status) && (
-                    <div className="text-xs text-red-600 font-medium">Overdue</div>
+                    <div className="text-xs text-red-600 font-medium">
+                      Overdue
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -318,11 +528,13 @@ export default function GoalsPage() {
 
           {filteredGoals.length === 0 && (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">No goals found matching your criteria.</p>
+              <p className="text-muted-foreground">
+                No goals found matching your criteria.
+              </p>
             </div>
           )}
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
